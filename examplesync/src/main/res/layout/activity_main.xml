@@ -14,69 +14,58 @@
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
+        android:layout_marginTop="0dp"
         android:text="@string/serial_port"
-        android:textAppearance="?android:attr/textAppearanceLarge"/>
+        android:textAppearance="?android:attr/textAppearanceLarge" />
 
     <TextView
         android:id="@+id/textView1"
         android:layout_width="match_parent"
         android:layout_height="150dp"
+        android:layout_below="@+id/textViewTitle"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="34dp"
+        android:layout_marginTop="11dp"
         android:background="#FFFFFF"
-        android:scrollbars="vertical"
-        android:gravity="bottom" />
+        android:gravity="bottom"
+        android:scrollbars="vertical" />
 
     <EditText
         android:id="@+id/editText1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_below="@+id/textView1"
         android:layout_alignLeft="@+id/textView1"
         android:layout_alignRight="@+id/textView1"
-        android:layout_below="@+id/textView1"
-        android:layout_marginTop="28dp"
+        android:layout_marginLeft="0dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginRight="0dp"
         android:ems="10">
 
-        <requestFocus/>
+        <requestFocus />
     </EditText>
 
     <Button
         android:id="@+id/buttonSend"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="172dp"
+        android:layout_height="46dp"
+        android:layout_below="@+id/editText1"
         android:layout_alignLeft="@+id/editText1"
         android:layout_alignRight="@+id/editText1"
-        android:layout_below="@+id/editText1"
-        android:layout_marginTop="42dp"
-        android:text="Send"/>
-
-    <CheckBox
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="9600"
-        android:id="@+id/checkBox"
-        android:checked="true"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:layout_below="@+id/buttonSend"/>
-
-    <CheckBox
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="38400"
-        android:id="@+id/checkBox2"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true"
-        android:layout_below="@+id/buttonSend"/>
+        android:layout_marginLeft="0dp"
+        android:layout_marginTop="9dp"
+        android:layout_marginRight="180dp"
+        android:text="Send" />
 
     <Button
-        android:layout_width="wrap_content"
+        android:id="@+id/btnGetLocation"
+        android:layout_width="173dp"
         android:layout_height="wrap_content"
-        android:text="Set baud rate"
-        android:id="@+id/buttonBaudrate"
-        android:layout_below="@+id/checkBox"
-        android:layout_alignRight="@+id/checkBox2"
-        android:layout_alignEnd="@+id/checkBox2"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"/>
+        android:layout_alignTop="@+id/buttonSend"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginEnd="0dp"
+        android:layout_marginRight="0dp"
+        android:onClick="getLocation"
+        android:text="Get Location" />
+
 </RelativeLayout>

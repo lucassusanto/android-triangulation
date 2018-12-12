@@ -1,4 +1,4 @@
-package com.example.lucas.location;
+package com.felhr.serialportexamplesync;
 
 import android.app.Activity;
 import android.location.Location;

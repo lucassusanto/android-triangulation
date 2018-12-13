@@ -84,10 +84,16 @@ void processInternalInput() {
   // Set Broadcast Delay
   else if(strncmp(buff, "SBD", 3) == 0) {
     char tmp[3];
-    sscanf(buff + 4, "%s", tmp); 
+    sscanf(buff + 4, "%s", tmp);
     
-    broadcastDelay = String(tmp).toInt();
-    broadcastDelay = broadcastDelay * 1000 + random(0, 20);
+    int bd = String(tmp).toInt();
+    
+    // Min 2 seconds
+    if(bd < 2) {
+      Serial.println("ERR");
+    }
+    
+    broadcastDelay = bd * 1000 + random(0, 20);
 
     Serial.println("OK");
   }
@@ -123,7 +129,8 @@ void processExternalInput() {
   if(strncmp(buffExternal, "TRI", 3) == 0) {
     char exDevice[4], exLatitude[12], exLongitude[12];
     sscanf(buffExternal, "%s %s %s", exDevice, exLatitude, exLongitude);
-
+    
+    Serial.print("nRF24L01# ");
     Serial.print(exDevice);
     Serial.print(" ");
     Serial.print(exLatitude);
@@ -140,6 +147,6 @@ void broadcastMyPosition() {
 
   radio.write(&myInfo, sizeof(myInfo));
 
-  Serial.print("ARD sent> ");
+  Serial.print("nRF24L01> ");
   Serial.println(myInfo);
 }

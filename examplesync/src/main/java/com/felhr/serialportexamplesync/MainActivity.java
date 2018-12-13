@@ -37,6 +37,9 @@ public class MainActivity extends AppCompatActivity {
     private LocationRequest mLocationRequest;
     private LocationCallback mLocationCallback;
 
+    // Verbose Levels
+    // 0: None; 1: OK, ERR; 2: NRF SEND; 3: NRF RECV
+    private int verbose;
     // private dictionary[] devicesLocation;
 
     private TextView display;
@@ -57,19 +60,21 @@ public class MainActivity extends AppCompatActivity {
         sendButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (usbService != null && !editText.getText().toString().equals("")) {
-                    String data = editText.getText().toString();
-                    usbService.write(data.getBytes());
+            if (usbService != null && !editText.getText().toString().equals("")) {
+                String data = editText.getText().toString();
+                usbService.write(data.getBytes());
 
-                    display.append(">" + data + "\n");
-                    editText.setText("");
-                }
+                display.append("> " + data + "\n");
+                editText.setText("");
+            }
             }
         });
 
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
         initLocationRequest(10000, 3000);
         setLocationCallBack();
+
+        verbose = 1;
     }
 
     @Override
@@ -90,16 +95,31 @@ public class MainActivity extends AppCompatActivity {
         stopLocationUpdates();
     }
 
-    private double round(double val, int decimals) {
-        double div = Math.pow(10, decimals);
-        return Math.round(val * div) / div;
+
+    private void handleVerbose(String data) {
+        if (verbose > 0) {
+            if (data.startsWith("OK") || data.startsWith("ERR")) {
+                display.append(data + "\n");
+            } else if (verbose > 1 && data.startsWith("nRF24L01>")) {
+                display.append(data + "\n");
+            } else if (verbose > 2 && data.startsWith("nRF24L01#")) {
+                display.append(data + "\n");
+            }
+        }
+
+        if (data.startsWith("nRF24L01#")) {
+            updateDeviceLocation(data);
+        }
     }
 
     /*
      * TRIANGULATION SERVICE
      */
     private void updateDeviceLocation(String data) {
+        String[] chunks = data.split(" ");
+        String deviceName = chunks[1], deviceLat = chunks[2], deviceLon = chunks[3];
 
+        display.append("Device " + deviceName + " updated\n");
     }
 
     /*
@@ -118,12 +138,12 @@ public class MainActivity extends AppCompatActivity {
             public void onLocationResult(LocationResult locationResult) {
                 if (locationResult != null) {
                     for (Location location : locationResult.getLocations()) {
-                        String data = "SP " +
-                                String.valueOf(round(location.getLatitude(), 6)) + " " +
-                                String.valueOf(round(location.getLongitude(), 6)) + ";";
-                        display.append(">" + data + "\n");
-
                         if (usbService != null) {
+                            String data = "SP " +
+                                    String.valueOf(round(location.getLatitude(), 6)) + " " +
+                                    String.valueOf(round(location.getLongitude(), 6)) + ";";
+                            display.append("> " + data + "\n");
+
                             usbService.write(data.getBytes());
                         }
                     }
@@ -146,6 +166,11 @@ public class MainActivity extends AppCompatActivity {
 
     private void stopLocationUpdates() {
         mFusedLocationClient.removeLocationUpdates(mLocationCallback);
+    }
+
+    private double round(double val, int decimals) {
+        double div = Math.pow(10, decimals);
+        return Math.round(val * div) / div;
     }
 
     /*
@@ -221,17 +246,19 @@ public class MainActivity extends AppCompatActivity {
      */
     private static class MyHandler extends Handler {
         private final WeakReference<MainActivity> mActivity;
+        private StringBuilder serialData;
 
         public MyHandler(MainActivity activity) {
             mActivity = new WeakReference<>(activity);
+            serialData = new StringBuilder();
         }
 
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case UsbService.MESSAGE_FROM_SERIAL_PORT:
-                    String data = (String) msg.obj;
-                    mActivity.get().display.append(data);
+                    // String data = (String) msg.obj;
+                    // mActivity.get().display.append(data);
                     break;
                 case UsbService.CTS_CHANGE:
                     Toast.makeText(mActivity.get(), "CTS_CHANGE",Toast.LENGTH_LONG).show();
@@ -241,7 +268,22 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 case UsbService.SYNC_READ:
                     String buffer = (String) msg.obj;
-                    mActivity.get().display.append(buffer);
+
+                    if(!buffer.equals("")) {
+                        int index = buffer.indexOf("\n");
+
+                        if (index != -1) {
+                            serialData.append(buffer, 0, index);
+                            mActivity.get().handleVerbose(serialData.toString());
+
+                            serialData = new StringBuilder();
+                            serialData.append(buffer, index + 1, buffer.length());
+
+                        } else {
+                            serialData.append(buffer);
+                        }
+                    }
+
                     break;
             }
         }

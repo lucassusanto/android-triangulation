@@ -18,16 +18,23 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
+import com.google.android.gms.location.LocationServices;
 
 import java.lang.ref.WeakReference;
 import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
     private UsbService usbService;
-    private LocationService locationService;
+
+    private FusedLocationProviderClient mFusedLocationClient;
+    private LocationRequest mLocationRequest;
     private LocationCallback mLocationCallback;
+
+    // private dictionary[] devicesLocation;
 
     private TextView display;
     private EditText editText;
@@ -47,36 +54,19 @@ public class MainActivity extends AppCompatActivity {
         sendButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (!editText.getText().toString().equals("")) {
+                if (usbService != null && !editText.getText().toString().equals("")) {
                     String data = editText.getText().toString();
-                    if (usbService != null) {
-                        usbService.write(data.getBytes());
-                        display.append(">" + data + "\n");
-                        editText.setText("");
-                    }
+                    usbService.write(data.getBytes());
+
+                    display.append(">" + data + "\n");
+                    editText.setText("");
                 }
             }
         });
 
-        locationService = new LocationService(this, 3000);
-        locationService.resume();
-        /*
-        mLocationCallback = new LocationCallback() {
-            @Override
-            public void onLocationResult(LocationResult locationResult) {
-                if (locationResult == null) {
-                    return;
-                }
-                for (Location location : locationResult.getLocations()) {
-                    String data = "SP " + String.valueOf(location.getLatitude()) + " " + String.valueOf(location.getLongitude()) + ";";
-                    if (usbService != null) {
-                        usbService.write(data.getBytes());
-                        display.append(">" + data + "\n");
-                    }
-                }
-            };
-        };
-        */
+        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+        initLocationRequest(10000, 5000);
+        setLocationCallBack();
     }
 
     @Override
@@ -84,7 +74,8 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         setFilters();
         startService(UsbService.class, usbConnection, null);
-        locationService.resume();
+
+        if(usbService != null) startLocationUpdates();
     }
 
     @Override
@@ -92,20 +83,51 @@ public class MainActivity extends AppCompatActivity {
         super.onPause();
         unregisterReceiver(mUsbReceiver);
         unbindService(usbConnection);
-        locationService.pause();
+
+        stopLocationUpdates();
+    }
+
+    /*
+     * TRIANGULATION SERVICE
+     */
+    private void updateDeviceLocation(String data) {
+
     }
 
     /*
      * LOCATION SERVICE
      */
-    public void getLocation(View view) {
-        String data = "SP " + String.valueOf(locationService.getLatitude()) + " "
-                            + String.valueOf(locationService.getLongitude()) + ";";
+    private void initLocationRequest(long interval, long fastestInterval) {
+        mLocationRequest = new LocationRequest();
+        mLocationRequest.setInterval(interval);
+        mLocationRequest.setFastestInterval(fastestInterval);
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+    }
 
-        if (usbService != null) {
-            usbService.write(data.getBytes());
-            display.append(">" + data + "\n");
-        }
+    private void setLocationCallBack() {
+        mLocationCallback = (new LocationCallback() {
+            @Override
+            public void onLocationResult(LocationResult locationResult) {
+                if (locationResult != null) {
+                    for (Location location : locationResult.getLocations()) {
+                        if (usbService != null) {
+                            String data = "SP " + String.valueOf(location.getLatitude()) + " "
+                                    + String.valueOf(location.getLongitude()) + ";";
+                            usbService.write(data.getBytes());
+                            display.append(">" + data + "\n");
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    private void startLocationUpdates() {
+        mFusedLocationClient.requestLocationUpdates(mLocationRequest, mLocationCallback, null);
+    }
+
+    private void stopLocationUpdates() {
+        mFusedLocationClient.removeLocationUpdates(mLocationCallback);
     }
 
     /*
@@ -116,11 +138,14 @@ public class MainActivity extends AppCompatActivity {
         public void onServiceConnected(ComponentName arg0, IBinder arg1) {
             usbService = ((UsbService.UsbBinder) arg1).getService();
             usbService.setHandler(mHandler);
+
+            startLocationUpdates();
         }
 
         @Override
         public void onServiceDisconnected(ComponentName arg0) {
             usbService = null;
+            stopLocationUpdates();
         }
     };
 

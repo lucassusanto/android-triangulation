@@ -80,11 +80,22 @@ void processInternalInput() {
     sscanf(buff + 3, "%s", myDevice);    
     Serial.println("OK");
   }
+
+  // Set Broadcast Delay
+  else if(strncmp(buff, "SBD", 3) == 0) {
+    char tmp[3];
+    sscanf(buff + 4, "%s", tmp); 
+    
+    broadcastDelay = String(tmp).toInt();
+    broadcastDelay = broadcastDelay * 1000 + random(0, 20);
+
+    Serial.println("OK");
+  }
   
   // Set Position
   else if(strncmp(buff, "SP", 2) == 0) {
     String lat, lon;
-    char blat[12], blon[12];
+    char blat[13], blon[13];
     
     sscanf(buff + 3, "%s %s", blat, blon);
     

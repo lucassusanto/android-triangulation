@@ -1,16 +1,19 @@
 package com.felhr.serialportexamplesync;
 
+import android.Manifest;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
@@ -65,7 +68,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
-        initLocationRequest(10000, 5000);
+        initLocationRequest(10000, 3000);
         setLocationCallBack();
     }
 
@@ -75,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
         setFilters();
         startService(UsbService.class, usbConnection, null);
 
-        if(usbService != null) startLocationUpdates();
+        startLocationUpdates();
     }
 
     @Override
@@ -85,6 +88,11 @@ public class MainActivity extends AppCompatActivity {
         unbindService(usbConnection);
 
         stopLocationUpdates();
+    }
+
+    private double round(double val, int decimals) {
+        double div = Math.pow(10, decimals);
+        return Math.round(val * div) / div;
     }
 
     /*
@@ -110,11 +118,13 @@ public class MainActivity extends AppCompatActivity {
             public void onLocationResult(LocationResult locationResult) {
                 if (locationResult != null) {
                     for (Location location : locationResult.getLocations()) {
+                        String data = "SP " +
+                                String.valueOf(round(location.getLatitude(), 6)) + " " +
+                                String.valueOf(round(location.getLongitude(), 6)) + ";";
+                        display.append(">" + data + "\n");
+
                         if (usbService != null) {
-                            String data = "SP " + String.valueOf(location.getLatitude()) + " "
-                                    + String.valueOf(location.getLongitude()) + ";";
                             usbService.write(data.getBytes());
-                            display.append(">" + data + "\n");
                         }
                     }
                 }
@@ -123,6 +133,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void startLocationUpdates() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) !=
+                PackageManager.PERMISSION_GRANTED &&
+                ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) !=
+                        PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                    1);
+        }
+
         mFusedLocationClient.requestLocationUpdates(mLocationRequest, mLocationCallback, null);
     }
 
@@ -138,14 +156,11 @@ public class MainActivity extends AppCompatActivity {
         public void onServiceConnected(ComponentName arg0, IBinder arg1) {
             usbService = ((UsbService.UsbBinder) arg1).getService();
             usbService.setHandler(mHandler);
-
-            startLocationUpdates();
         }
 
         @Override
         public void onServiceDisconnected(ComponentName arg0) {
             usbService = null;
-            stopLocationUpdates();
         }
     };
 

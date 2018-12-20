@@ -1,59 +1,187 @@
 package com.felhr.serialportexamplesync;
 
+import android.Manifest;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.content.pm.PackageManager;
+import android.location.Location;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
-import android.widget.CheckBox;
-import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
+import com.google.android.gms.location.LocationServices;
+
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
-
-    /*
-     * Notifications from UsbService will be received here.
-     */
-    private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            switch (intent.getAction()) {
-                case UsbService.ACTION_USB_PERMISSION_GRANTED: // USB PERMISSION GRANTED
-                    Toast.makeText(context, "USB Ready", Toast.LENGTH_SHORT).show();
-                    break;
-                case UsbService.ACTION_USB_PERMISSION_NOT_GRANTED: // USB PERMISSION NOT GRANTED
-                    Toast.makeText(context, "USB Permission not granted", Toast.LENGTH_SHORT).show();
-                    break;
-                case UsbService.ACTION_NO_USB: // NO USB CONNECTED
-                    Toast.makeText(context, "No USB connected", Toast.LENGTH_SHORT).show();
-                    break;
-                case UsbService.ACTION_USB_DISCONNECTED: // USB DISCONNECTED
-                    Toast.makeText(context, "USB disconnected", Toast.LENGTH_SHORT).show();
-                    break;
-                case UsbService.ACTION_USB_NOT_SUPPORTED: // USB NOT SUPPORTED
-                    Toast.makeText(context, "USB device not supported", Toast.LENGTH_SHORT).show();
-                    break;
-            }
-        }
-    };
     private UsbService usbService;
+
+    private FusedLocationProviderClient mFusedLocationClient;
+    private LocationRequest mLocationRequest;
+    private LocationCallback mLocationCallback;
+
+    // Verbose Levels
+    // 0: None; 1: OK, ERR; 2: NRF SEND; 3: NRF RECV
+    private int verbose;
+
     private TextView display;
     private EditText editText;
-    private CheckBox box9600, box38400;
     private MyHandler mHandler;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        mHandler = new MyHandler(this);
+
+        display = (TextView) findViewById(R.id.textView1);
+        editText = (EditText) findViewById(R.id.editText1);
+        Button sendButton = (Button) findViewById(R.id.buttonSend);
+
+        sendButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+            if (usbService != null && !editText.getText().toString().equals("")) {
+                String data = editText.getText().toString();
+                usbService.write(data.getBytes());
+
+                display.append("> " + data + "\n");
+                editText.setText("");
+            }
+            }
+        });
+
+        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+        initLocationRequest(10000, 3000);
+        setLocationCallBack();
+
+        verbose = 1;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        setFilters();
+        startService(UsbService.class, usbConnection, null);
+
+        startLocationUpdates();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        unregisterReceiver(mUsbReceiver);
+        unbindService(usbConnection);
+
+        stopLocationUpdates();
+    }
+
+    /*
+     * TRIANGULATION SERVICE
+     *
+     * Todo: Add Multi-Threading
+     */
+    class DeviceInfo {
+        String name;
+        float latitude;
+        float longitude;
+    }
+
+    // private List<DeviceInfo> nodeList = new ArrayList<DeviceInfo>();
+
+    private void updateDeviceLocation(String data) {
+        String[] chunks = data.split(" ");
+
+        DeviceInfo deviceInfo = new DeviceInfo();
+        deviceInfo.name = chunks[1];
+        deviceInfo.latitude = Float.parseFloat(chunks[2]);
+        deviceInfo.longitude = Float.parseFloat(chunks[3]);
+
+        drawDeviceOnMap(deviceInfo);
+
+        display.append("Device " + deviceInfo.name + " updated\n");
+    }
+
+    private void drawDeviceOnMap(DeviceInfo deviceInfo) {
+
+    }
+
+    /*
+     * LOCATION SERVICE
+     *
+     * Todo: Add Multi-Threading
+     */
+    private void initLocationRequest(long interval, long fastestInterval) {
+        mLocationRequest = new LocationRequest();
+        mLocationRequest.setInterval(interval);
+        mLocationRequest.setFastestInterval(fastestInterval);
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+    }
+
+    private void setLocationCallBack() {
+        mLocationCallback = (new LocationCallback() {
+            @Override
+            public void onLocationResult(LocationResult locationResult) {
+                if (locationResult != null) {
+                    for (Location location : locationResult.getLocations()) {
+                        if (usbService != null) {
+                            String data = "SP " +
+                                    String.valueOf(round(location.getLatitude(), 6)) + " " +
+                                    String.valueOf(round(location.getLongitude(), 6)) + ";";
+                            display.append("> " + data + "\n");
+
+                            usbService.write(data.getBytes());
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    private void startLocationUpdates() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) !=
+                PackageManager.PERMISSION_GRANTED &&
+                ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) !=
+                        PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                    1);
+        }
+
+        mFusedLocationClient.requestLocationUpdates(mLocationRequest, mLocationCallback, null);
+    }
+
+    private void stopLocationUpdates() {
+        mFusedLocationClient.removeLocationUpdates(mLocationCallback);
+    }
+
+    private double round(double val, int decimals) {
+        double div = Math.pow(10, decimals);
+        return Math.round(val * div) / div;
+    }
+
+    /*
+     * USB SERIAL DRIVER
+     */
     private final ServiceConnection usbConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName arg0, IBinder arg1) {
@@ -66,76 +194,6 @@ public class MainActivity extends AppCompatActivity {
             usbService = null;
         }
     };
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
-        mHandler = new MyHandler(this);
-
-        display = (TextView) findViewById(R.id.textView1);
-        editText = (EditText) findViewById(R.id.editText1);
-        Button sendButton = (Button) findViewById(R.id.buttonSend);
-        sendButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (!editText.getText().toString().equals("")) {
-                    String data = editText.getText().toString();
-                    if (usbService != null) { // if UsbService was correctly binded, Send data
-                        usbService.write(data.getBytes());
-                    }
-                }
-            }
-        });
-
-        box9600 = (CheckBox) findViewById(R.id.checkBox);
-        box9600.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if(box9600.isChecked())
-                    box38400.setChecked(false);
-                else
-                    box38400.setChecked(true);
-            }
-        });
-
-        box38400 = (CheckBox) findViewById(R.id.checkBox2);
-        box38400.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if(box38400.isChecked())
-                    box9600.setChecked(false);
-                else
-                    box9600.setChecked(true);
-            }
-        });
-
-        Button baudrateButton = (Button) findViewById(R.id.buttonBaudrate);
-        baudrateButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if(box9600.isChecked())
-                    usbService.changeBaudRate(9600);
-                else
-                    usbService.changeBaudRate(38400);
-            }
-        });
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        setFilters();  // Start listening notifications from UsbService
-        startService(UsbService.class, usbConnection, null); // Start UsbService(if it was not started before) and Bind it
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-        unregisterReceiver(mUsbReceiver);
-        unbindService(usbConnection);
-    }
 
     private void startService(Class<?> service, ServiceConnection serviceConnection, Bundle extras) {
         if (!UsbService.SERVICE_CONNECTED) {
@@ -164,21 +222,49 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /*
+     * Notifications from UsbService will be received here.
+     */
+    private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            switch (intent.getAction()) {
+                case UsbService.ACTION_USB_PERMISSION_GRANTED: // USB PERMISSION GRANTED
+                    display.append("USB Ready\n");
+                    break;
+                case UsbService.ACTION_USB_PERMISSION_NOT_GRANTED: // USB PERMISSION NOT GRANTED
+                    display.append("USB Permission not granted\n");
+                    break;
+                case UsbService.ACTION_NO_USB: // NO USB CONNECTED
+                    display.append("No USB connected\n");
+                    break;
+                case UsbService.ACTION_USB_DISCONNECTED: // USB DISCONNECTED
+                    display.append("USB disconnected\n");
+                    break;
+                case UsbService.ACTION_USB_NOT_SUPPORTED: // USB NOT SUPPORTED
+                    display.append("USB device not supported\n");
+                    break;
+            }
+        }
+    };
+
+    /*
      * This handler will be passed to UsbService. Data received from serial port is displayed through this handler
      */
     private static class MyHandler extends Handler {
         private final WeakReference<MainActivity> mActivity;
+        private StringBuilder serialData;
 
         public MyHandler(MainActivity activity) {
             mActivity = new WeakReference<>(activity);
+            serialData = new StringBuilder();
         }
 
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case UsbService.MESSAGE_FROM_SERIAL_PORT:
-                    String data = (String) msg.obj;
-                    mActivity.get().display.append(data);
+                    // String data = (String) msg.obj;
+                    // mActivity.get().display.append(data);
                     break;
                 case UsbService.CTS_CHANGE:
                     Toast.makeText(mActivity.get(), "CTS_CHANGE",Toast.LENGTH_LONG).show();
@@ -188,9 +274,41 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 case UsbService.SYNC_READ:
                     String buffer = (String) msg.obj;
-                    mActivity.get().display.append(buffer);
+
+                    if(!buffer.equals("")) {
+                        int index = buffer.indexOf("\n");
+
+                        if (index != -1) {
+                            serialData.append(buffer, 0, index);
+                            mActivity.get().handleVerbose(serialData.toString());
+
+                            serialData = new StringBuilder();
+                            serialData.append(buffer, index + 1, buffer.length());
+
+                        } else {
+                            serialData.append(buffer);
+                        }
+                    }
+
                     break;
             }
+        }
+    }
+
+    // Todo: Add Multi-Threading
+    private void handleVerbose(String data) {
+        if (verbose > 0 && (data.startsWith("OK") || data.startsWith("ERR"))) {
+            display.append(data + "\n");
+        }
+        else if (verbose > 1 && data.startsWith("nRF24L01>")) {
+            display.append(data + "\n");
+        }
+        else if (verbose > 2 && data.startsWith("nRF24L01<")) {
+            display.append(data + "\n");
+        }
+
+        if (data.startsWith("nRF24L01<")) {
+            updateDeviceLocation(data);
         }
     }
 }

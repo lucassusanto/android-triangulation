@@ -130,7 +130,7 @@ void processExternalInput() {
     char exDevice[4], exLatitude[12], exLongitude[12];
     sscanf(buffExternal, "%s %s %s", exDevice, exLatitude, exLongitude);
     
-    Serial.print("nRF24L01# ");
+    Serial.print("nRF24L01< ");
     Serial.print(exDevice);
     Serial.print(" ");
     Serial.print(exLatitude);

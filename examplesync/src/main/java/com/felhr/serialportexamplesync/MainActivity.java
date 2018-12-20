@@ -28,6 +28,8 @@ import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
@@ -40,7 +42,6 @@ public class MainActivity extends AppCompatActivity {
     // Verbose Levels
     // 0: None; 1: OK, ERR; 2: NRF SEND; 3: NRF RECV
     private int verbose;
-    // private dictionary[] devicesLocation;
 
     private TextView display;
     private EditText editText;
@@ -95,35 +96,40 @@ public class MainActivity extends AppCompatActivity {
         stopLocationUpdates();
     }
 
-
-    private void handleVerbose(String data) {
-        if (verbose > 0) {
-            if (data.startsWith("OK") || data.startsWith("ERR")) {
-                display.append(data + "\n");
-            } else if (verbose > 1 && data.startsWith("nRF24L01>")) {
-                display.append(data + "\n");
-            } else if (verbose > 2 && data.startsWith("nRF24L01#")) {
-                display.append(data + "\n");
-            }
-        }
-
-        if (data.startsWith("nRF24L01#")) {
-            updateDeviceLocation(data);
-        }
-    }
-
     /*
      * TRIANGULATION SERVICE
+     *
+     * Todo: Add Multi-Threading
      */
+    class DeviceInfo {
+        String name;
+        float latitude;
+        float longitude;
+    }
+
+    // private List<DeviceInfo> nodeList = new ArrayList<DeviceInfo>();
+
     private void updateDeviceLocation(String data) {
         String[] chunks = data.split(" ");
-        String deviceName = chunks[1], deviceLat = chunks[2], deviceLon = chunks[3];
 
-        display.append("Device " + deviceName + " updated\n");
+        DeviceInfo deviceInfo = new DeviceInfo();
+        deviceInfo.name = chunks[1];
+        deviceInfo.latitude = Float.parseFloat(chunks[2]);
+        deviceInfo.longitude = Float.parseFloat(chunks[3]);
+
+        drawDeviceOnMap(deviceInfo);
+
+        display.append("Device " + deviceInfo.name + " updated\n");
+    }
+
+    private void drawDeviceOnMap(DeviceInfo deviceInfo) {
+
     }
 
     /*
      * LOCATION SERVICE
+     *
+     * Todo: Add Multi-Threading
      */
     private void initLocationRequest(long interval, long fastestInterval) {
         mLocationRequest = new LocationRequest();
@@ -286,6 +292,23 @@ public class MainActivity extends AppCompatActivity {
 
                     break;
             }
+        }
+    }
+
+    // Todo: Add Multi-Threading
+    private void handleVerbose(String data) {
+        if (verbose > 0 && (data.startsWith("OK") || data.startsWith("ERR"))) {
+            display.append(data + "\n");
+        }
+        else if (verbose > 1 && data.startsWith("nRF24L01>")) {
+            display.append(data + "\n");
+        }
+        else if (verbose > 2 && data.startsWith("nRF24L01<")) {
+            display.append(data + "\n");
+        }
+
+        if (data.startsWith("nRF24L01<")) {
+            updateDeviceLocation(data);
         }
     }
 }

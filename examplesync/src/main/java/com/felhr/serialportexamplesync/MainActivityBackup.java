@@ -13,15 +13,8 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
-import android.support.annotation.NonNull;
-import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.view.GravityCompat;
-import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -35,12 +28,9 @@ import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 
-public class MainActivity extends AppCompatActivity implements
-        NavigationView.OnNavigationItemSelectedListener {
+public class MainActivityBackup extends AppCompatActivity {
     private UsbService usbService;
 
     private FusedLocationProviderClient mFusedLocationClient;
@@ -55,66 +45,36 @@ public class MainActivity extends AppCompatActivity implements
     private EditText editText;
     private MyHandler mHandler;
 
-    private DrawerLayout drawer;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
+        mHandler = new MyHandler(this);
 
-        drawer = findViewById(R.id.drawer_layout);
+        display = (TextView) findViewById(R.id.textView1);
+        editText = (EditText) findViewById(R.id.editText1);
+        Button sendButton = (Button) findViewById(R.id.buttonSend);
 
-        NavigationView navigationView = findViewById(R.id.nav_view);
-        navigationView.setNavigationItemSelectedListener(this);
+        sendButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+            if (usbService != null && !editText.getText().toString().equals("")) {
+                String data = editText.getText().toString();
+                usbService.write(data.getBytes());
 
-        ActionBarDrawerToggle toogle = new ActionBarDrawerToggle(this, drawer, toolbar,
-                R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-        drawer.addDrawerListener(toogle);
-        toogle.syncState();
+                display.append("> " + data + "\n");
+                editText.setText("");
+            }
+            }
+        });
 
-        if(savedInstanceState == null) {
-            getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container,
-                    new ConsoleFragment()).commit();
-            navigationView.setCheckedItem(R.id.nav_console);
-        }
+        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+        initLocationRequest(10000, 3000);
+        setLocationCallBack();
+
+        verbose = 1;
     }
-
-    @Override
-    public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-        switch(item.getItemId()) {
-            case R.id.nav_devices:
-                getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container,
-                        new DevicesFragment()).commit();
-                break;
-            case R.id.nav_map:
-                getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container,
-                        new MapFragment()).commit();
-                break;
-            case R.id.nav_identity:
-                getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container,
-                        new IdentityFragment()).commit();
-                break;
-            case R.id.nav_console:
-                getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container,
-                        new ConsoleFragment()).commit();
-                break;
-        }
-        drawer.closeDrawer(GravityCompat.START);
-        return true;
-    }
-
-    @Override
-    public void onBackPressed() {
-        if(drawer.isDrawerOpen(GravityCompat.START)) {
-            drawer.closeDrawer(GravityCompat.START);
-        } else {
-            super.onBackPressed();
-        }
-    }
-
 
     @Override
     public void onResume() {
@@ -289,10 +249,10 @@ public class MainActivity extends AppCompatActivity implements
      * This handler will be passed to UsbService. Data received from serial port is displayed through this handler
      */
     private static class MyHandler extends Handler {
-        private final WeakReference<MainActivity> mActivity;
+        private final WeakReference<MainActivityBackup> mActivity;
         private StringBuilder serialData;
 
-        public MyHandler(MainActivity activity) {
+        public MyHandler(MainActivityBackup activity) {
             mActivity = new WeakReference<>(activity);
             serialData = new StringBuilder();
         }

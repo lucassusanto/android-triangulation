@@ -12,16 +12,11 @@
             android:title="Map"/>
         <item android:id="@+id/nav_identity"
             android:icon="@drawable/ic_identity"
-            android:title="Identity"/>
+            android:title="My Device"/>
+        <item
+            android:id="@+id/nav_console"
+            android:icon="@drawable/ic_console"
+            android:title="Console"/>
     </group>
-
-    <item android:title="Low Level">
-        <menu>
-            <item
-                android:id="@+id/nav_console"
-                android:icon="@drawable/ic_console"
-                android:title="Console"/>
-        </menu>
-    </item>
 
 </menu>

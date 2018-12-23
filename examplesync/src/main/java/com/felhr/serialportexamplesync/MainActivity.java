@@ -16,6 +16,7 @@ import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.Fragment;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -43,6 +44,10 @@ public class MainActivity extends AppCompatActivity implements
         NavigationView.OnNavigationItemSelectedListener {
 
     private DrawerLayout drawer;
+    private Fragment devicesFragment;
+    private Fragment mapFragment;
+    private Fragment identityFragment;
+    private Fragment consoleFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,31 +67,35 @@ public class MainActivity extends AppCompatActivity implements
         drawer.addDrawerListener(toogle);
         toogle.syncState();
 
+        devicesFragment = new DevicesFragment();
+        mapFragment = new MapFragment();
+        identityFragment = new IdentityFragment();
+        consoleFragment = new ConsoleFragment();
+
         if(savedInstanceState == null) {
-            getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container,
-                    new ConsoleFragment()).commit();
+            replaceFragment(consoleFragment);
             navigationView.setCheckedItem(R.id.nav_console);
         }
+    }
+
+    private void replaceFragment(Fragment fragment) {
+        getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, fragment).commit();
     }
 
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
         switch(item.getItemId()) {
             case R.id.nav_devices:
-                getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container,
-                        new DevicesFragment()).commit();
+                replaceFragment(devicesFragment);
                 break;
             case R.id.nav_map:
-                getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container,
-                        new MapFragment()).commit();
+                replaceFragment(mapFragment);
                 break;
             case R.id.nav_identity:
-                getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container,
-                        new IdentityFragment()).commit();
+                replaceFragment(identityFragment);
                 break;
             case R.id.nav_console:
-                getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container,
-                        new ConsoleFragment()).commit();
+                replaceFragment(consoleFragment);
                 break;
         }
         drawer.closeDrawer(GravityCompat.START);
@@ -97,7 +106,8 @@ public class MainActivity extends AppCompatActivity implements
     public void onBackPressed() {
         if(drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
-        } else {
+        }
+        else {
             super.onBackPressed();
         }
     }

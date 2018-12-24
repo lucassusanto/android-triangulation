@@ -107,6 +107,9 @@ public class MainActivity extends AppCompatActivity
         initLocationRequest(10000, 3000);
         setLocationCallBack();
 
+        myLat = 0.0;
+        myLon = 0.0;
+
         // Verbose Level
         verbose = 1;
     }

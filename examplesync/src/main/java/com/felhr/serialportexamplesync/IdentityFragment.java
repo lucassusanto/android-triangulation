@@ -22,6 +22,7 @@ public class IdentityFragment extends Fragment {
     private TextView txMyLat;
     private TextView txMyLon;
     private TextView txVerbose;
+
     private Button btnChangeDevName;
     private Button btnChangeVerbose;
     private Button btnRefresh;
@@ -85,7 +86,7 @@ public class IdentityFragment extends Fragment {
                 txMyName.setText(m.getMyName());
                 txMyLat.setText(String.valueOf(m.getMyLat()));
                 txMyLon.setText(String.valueOf(m.getMyLon()));
-                txVerbose.setText(m.getVerbose());
+                txVerbose.setText(String.valueOf(m.getVerbose()));
 
                 Toast.makeText(m, "All value was refreshed", Toast.LENGTH_SHORT).show();
             }

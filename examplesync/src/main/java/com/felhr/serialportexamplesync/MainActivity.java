@@ -1,6 +1,7 @@
 package com.felhr.serialportexamplesync;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -43,17 +44,32 @@ import java.util.Set;
 public class MainActivity extends AppCompatActivity implements
         NavigationView.OnNavigationItemSelectedListener {
 
+    // UI
     private DrawerLayout drawer;
     private Fragment devicesFragment;
     private Fragment mapFragment;
     private Fragment identityFragment;
     private Fragment consoleFragment;
 
+    // Location
+    private FusedLocationProviderClient mFusedLocationClient;
+    private LocationRequest mLocationRequest;
+    private LocationCallback mLocationCallback;
+
+    // USB Service
+    private UsbService usbService;
+    private MyHandler mHandler;
+
+    // Verbose Levels
+    // 0: None; 1: OK, ERR; 2: NRF SEND; 3: NRF RECV
+    private int verbose;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // UI
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
@@ -76,6 +92,14 @@ public class MainActivity extends AppCompatActivity implements
             replaceFragment(consoleFragment);
             navigationView.setCheckedItem(R.id.nav_console);
         }
+
+        // Location Service
+        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+        initLocationRequest(10000, 3000);
+        setLocationCallBack();
+
+        // Verbose Level
+        verbose = 1;
     }
 
     private void replaceFragment(Fragment fragment) {
@@ -109,6 +133,236 @@ public class MainActivity extends AppCompatActivity implements
         }
         else {
             super.onBackPressed();
+        }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        setFilters();
+        startService(UsbService.class, usbConnection, null);
+
+        startLocationUpdates();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        unregisterReceiver(mUsbReceiver);
+        unbindService(usbConnection);
+
+        stopLocationUpdates();
+    }
+
+    /*
+     * TRIANGULATION SERVICE
+     */
+    class DeviceInfo {
+        String name;
+        float latitude;
+        float longitude;
+    }
+
+    // private List<DeviceInfo> nodeList = new ArrayList<DeviceInfo>();
+
+    private void updateDeviceLocation(String data) {
+        String[] chunks = data.split(" ");
+
+        DeviceInfo deviceInfo = new DeviceInfo();
+        deviceInfo.name = chunks[1];
+        deviceInfo.latitude = Float.parseFloat(chunks[2]);
+        deviceInfo.longitude = Float.parseFloat(chunks[3]);
+
+        drawDeviceOnMap(deviceInfo);
+
+        display.append("Device " + deviceInfo.name + " updated\n");
+        logd
+    }
+
+    private void drawDeviceOnMap(DeviceInfo deviceInfo) {
+
+    }
+
+    /*
+     * LOCATION SERVICE
+     */
+    private void initLocationRequest(long interval, long fastestInterval) {
+        mLocationRequest = new LocationRequest();
+        mLocationRequest.setInterval(interval);
+        mLocationRequest.setFastestInterval(fastestInterval);
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+    }
+
+    private void setLocationCallBack() {
+        mLocationCallback = (new LocationCallback() {
+            @Override
+            public void onLocationResult(LocationResult locationResult) {
+                if (locationResult != null) {
+                    for (Location location : locationResult.getLocations()) {
+                        if (usbService != null) {
+                            String data = "SP " +
+                                    String.valueOf(round(location.getLatitude(), 6)) + " " +
+                                    String.valueOf(round(location.getLongitude(), 6)) + ";";
+                            display.append("> " + data + "\n");
+
+                            usbService.write(data.getBytes());
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    private void startLocationUpdates() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) !=
+                PackageManager.PERMISSION_GRANTED &&
+                ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) !=
+                        PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                    1);
+        }
+
+        mFusedLocationClient.requestLocationUpdates(mLocationRequest, mLocationCallback, null);
+    }
+
+    private void stopLocationUpdates() {
+        mFusedLocationClient.removeLocationUpdates(mLocationCallback);
+    }
+
+    private double round(double val, int decimals) {
+        double div = Math.pow(10, decimals);
+        return Math.round(val * div) / div;
+    }
+
+    /*
+     * USB SERIAL DRIVER
+     */
+    private final ServiceConnection usbConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName arg0, IBinder arg1) {
+            usbService = ((UsbService.UsbBinder) arg1).getService();
+            usbService.setHandler(mHandler);
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName arg0) {
+            usbService = null;
+        }
+    };
+
+    private void startService(Class<?> service, ServiceConnection serviceConnection, Bundle extras) {
+        if (!UsbService.SERVICE_CONNECTED) {
+            Intent startService = new Intent(this, service);
+            if (extras != null && !extras.isEmpty()) {
+                Set<String> keys = extras.keySet();
+                for (String key : keys) {
+                    String extra = extras.getString(key);
+                    startService.putExtra(key, extra);
+                }
+            }
+            startService(startService);
+        }
+        Intent bindingIntent = new Intent(this, service);
+        bindService(bindingIntent, serviceConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    private void setFilters() {
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(UsbService.ACTION_USB_PERMISSION_GRANTED);
+        filter.addAction(UsbService.ACTION_NO_USB);
+        filter.addAction(UsbService.ACTION_USB_DISCONNECTED);
+        filter.addAction(UsbService.ACTION_USB_NOT_SUPPORTED);
+        filter.addAction(UsbService.ACTION_USB_PERMISSION_NOT_GRANTED);
+        registerReceiver(mUsbReceiver, filter);
+    }
+
+    /*
+     * Notifications from UsbService will be received here.
+     */
+    private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            switch (intent.getAction()) {
+                case UsbService.ACTION_USB_PERMISSION_GRANTED: // USB PERMISSION GRANTED
+                    display.append("USB Ready\n");
+                    break;
+                case UsbService.ACTION_USB_PERMISSION_NOT_GRANTED: // USB PERMISSION NOT GRANTED
+                    display.append("USB Permission not granted\n");
+                    break;
+                case UsbService.ACTION_NO_USB: // NO USB CONNECTED
+                    display.append("No USB connected\n");
+                    break;
+                case UsbService.ACTION_USB_DISCONNECTED: // USB DISCONNECTED
+                    display.append("USB disconnected\n");
+                    break;
+                case UsbService.ACTION_USB_NOT_SUPPORTED: // USB NOT SUPPORTED
+                    display.append("USB device not supported\n");
+                    break;
+            }
+        }
+    };
+
+    /*
+     * This handler will be passed to UsbService. Data received from serial port is displayed through this handler
+     */
+    private static class MyHandler extends Handler {
+        private final WeakReference<MainActivity> mActivity;
+        private StringBuilder serialData;
+
+        public MyHandler(MainActivity activity) {
+            mActivity = new WeakReference<>(activity);
+            serialData = new StringBuilder();
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case UsbService.MESSAGE_FROM_SERIAL_PORT:
+                    // String data = (String) msg.obj;
+                    // mActivity.get().display.append(data);
+                    break;
+                case UsbService.CTS_CHANGE:
+                    Toast.makeText(mActivity.get(), "CTS_CHANGE",Toast.LENGTH_LONG).show();
+                    break;
+                case UsbService.DSR_CHANGE:
+                    Toast.makeText(mActivity.get(), "DSR_CHANGE",Toast.LENGTH_LONG).show();
+                    break;
+                case UsbService.SYNC_READ:
+                    String buffer = (String) msg.obj;
+
+                    if(!buffer.equals("")) {
+                        int index = buffer.indexOf("\n");
+
+                        if (index != -1) {
+                            serialData.append(buffer, 0, index);
+                            mActivity.get().handleVerbose(serialData.toString());
+
+                            serialData = new StringBuilder();
+                            serialData.append(buffer, index + 1, buffer.length());
+
+                        } else {
+                            serialData.append(buffer);
+                        }
+                    }
+
+                    break;
+            }
+        }
+    }
+
+    private void handleVerbose(String data) {
+        if (verbose > 0 && (data.startsWith("OK") || data.startsWith("ERR"))) {
+            display.append(data + "\n");
+        }
+        else if (verbose > 1 && data.startsWith("nRF24L01>")) {
+            display.append(data + "\n");
+        }
+        else if (verbose > 2 && data.startsWith("nRF24L01<")) {
+            display.append(data + "\n");
+        }
+
+        if (data.startsWith("nRF24L01<")) {
+            updateDeviceLocation(data);
         }
     }
 }

@@ -1,7 +1,6 @@
 package com.felhr.serialportexamplesync;
 
 import android.Manifest;
-import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -14,16 +13,8 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
-import android.support.annotation.NonNull;
-import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.Fragment;
-import android.support.v4.view.GravityCompat;
-import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -37,103 +28,52 @@ import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 
-public class MainActivity extends AppCompatActivity implements
-        NavigationView.OnNavigationItemSelectedListener {
+public class MainActivityBackup extends AppCompatActivity {
+    private UsbService usbService;
 
-    // UI
-    private DrawerLayout drawer;
-    private Fragment devicesFragment;
-    private Fragment mapFragment;
-    private Fragment identityFragment;
-    private Fragment consoleFragment;
-
-    // Location
     private FusedLocationProviderClient mFusedLocationClient;
     private LocationRequest mLocationRequest;
     private LocationCallback mLocationCallback;
 
-    // USB Service
-    private UsbService usbService;
-    private MyHandler mHandler;
-
     // Verbose Levels
     // 0: None; 1: OK, ERR; 2: NRF SEND; 3: NRF RECV
     private int verbose;
+
+    private TextView display;
+    private EditText editText;
+    private MyHandler mHandler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // UI
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
+        mHandler = new MyHandler(this);
 
-        drawer = findViewById(R.id.drawer_layout);
+        display = (TextView) findViewById(R.id.textView1);
+        editText = (EditText) findViewById(R.id.editText1);
+        Button sendButton = (Button) findViewById(R.id.buttonSend);
 
-        NavigationView navigationView = findViewById(R.id.nav_view);
-        navigationView.setNavigationItemSelectedListener(this);
+        sendButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+            if (usbService != null && !editText.getText().toString().equals("")) {
+                String data = editText.getText().toString();
+                usbService.write(data.getBytes());
 
-        ActionBarDrawerToggle toogle = new ActionBarDrawerToggle(this, drawer, toolbar,
-                R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-        drawer.addDrawerListener(toogle);
-        toogle.syncState();
+                display.append("> " + data + "\n");
+                editText.setText("");
+            }
+            }
+        });
 
-        devicesFragment = new DevicesFragment();
-        mapFragment = new MapFragment();
-        identityFragment = new IdentityFragment();
-        consoleFragment = new ConsoleFragment();
-
-        if(savedInstanceState == null) {
-            replaceFragment(consoleFragment);
-            navigationView.setCheckedItem(R.id.nav_console);
-        }
-
-        // Location Service
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
         initLocationRequest(10000, 3000);
         setLocationCallBack();
 
-        // Verbose Level
         verbose = 1;
-    }
-
-    private void replaceFragment(Fragment fragment) {
-        getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, fragment).commit();
-    }
-
-    @Override
-    public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-        switch(item.getItemId()) {
-            case R.id.nav_devices:
-                replaceFragment(devicesFragment);
-                break;
-            case R.id.nav_map:
-                replaceFragment(mapFragment);
-                break;
-            case R.id.nav_identity:
-                replaceFragment(identityFragment);
-                break;
-            case R.id.nav_console:
-                replaceFragment(consoleFragment);
-                break;
-        }
-        drawer.closeDrawer(GravityCompat.START);
-        return true;
-    }
-
-    @Override
-    public void onBackPressed() {
-        if(drawer.isDrawerOpen(GravityCompat.START)) {
-            drawer.closeDrawer(GravityCompat.START);
-        }
-        else {
-            super.onBackPressed();
-        }
     }
 
     @Override
@@ -156,6 +96,8 @@ public class MainActivity extends AppCompatActivity implements
 
     /*
      * TRIANGULATION SERVICE
+     *
+     * Todo: Add Multi-Threading
      */
     class DeviceInfo {
         String name;
@@ -176,7 +118,6 @@ public class MainActivity extends AppCompatActivity implements
         drawDeviceOnMap(deviceInfo);
 
         display.append("Device " + deviceInfo.name + " updated\n");
-        logd
     }
 
     private void drawDeviceOnMap(DeviceInfo deviceInfo) {
@@ -185,6 +126,8 @@ public class MainActivity extends AppCompatActivity implements
 
     /*
      * LOCATION SERVICE
+     *
+     * Todo: Add Multi-Threading
      */
     private void initLocationRequest(long interval, long fastestInterval) {
         mLocationRequest = new LocationRequest();
@@ -306,10 +249,10 @@ public class MainActivity extends AppCompatActivity implements
      * This handler will be passed to UsbService. Data received from serial port is displayed through this handler
      */
     private static class MyHandler extends Handler {
-        private final WeakReference<MainActivity> mActivity;
+        private final WeakReference<MainActivityBackup> mActivity;
         private StringBuilder serialData;
 
-        public MyHandler(MainActivity activity) {
+        public MyHandler(MainActivityBackup activity) {
             mActivity = new WeakReference<>(activity);
             serialData = new StringBuilder();
         }
@@ -350,6 +293,7 @@ public class MainActivity extends AppCompatActivity implements
         }
     }
 
+    // Todo: Add Multi-Threading
     private void handleVerbose(String data) {
         if (verbose > 0 && (data.startsWith("OK") || data.startsWith("ERR"))) {
             display.append(data + "\n");

@@ -2,6 +2,7 @@ package com.felhr.serialportexamplesync;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.FragmentTransaction;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -23,6 +24,7 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
@@ -41,15 +43,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-public class MainActivity extends AppCompatActivity implements
-        NavigationView.OnNavigationItemSelectedListener {
+public class MainActivity extends AppCompatActivity
+        implements NavigationView.OnNavigationItemSelectedListener, ConsoleFragment.OnConsoleMessageListener,
+        IdentityFragment.OnIdentityMessageListener{
+
+    private static final String TAG = "MainActivity";
 
     // UI
     private DrawerLayout drawer;
-    private Fragment devicesFragment;
-    private Fragment mapFragment;
-    private Fragment identityFragment;
-    private Fragment consoleFragment;
+    private DevicesFragment devicesFragment;
+    private MapFragment mapFragment;
+    private IdentityFragment identityFragment;
+    private ConsoleFragment consoleFragment;
+    private Fragment currentFragment;
 
     // Location
     private FusedLocationProviderClient mFusedLocationClient;
@@ -63,6 +69,11 @@ public class MainActivity extends AppCompatActivity implements
     // Verbose Levels
     // 0: None; 1: OK, ERR; 2: NRF SEND; 3: NRF RECV
     private int verbose;
+
+    // My Identity
+    private String myName = "TRI1";
+    private double myLat;
+    private double myLon;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -83,10 +94,8 @@ public class MainActivity extends AppCompatActivity implements
         drawer.addDrawerListener(toogle);
         toogle.syncState();
 
-        devicesFragment = new DevicesFragment();
-        mapFragment = new MapFragment();
-        identityFragment = new IdentityFragment();
-        consoleFragment = new ConsoleFragment();
+        // Fragments
+        initFragments();
 
         if(savedInstanceState == null) {
             replaceFragment(consoleFragment);
@@ -102,8 +111,37 @@ public class MainActivity extends AppCompatActivity implements
         verbose = 1;
     }
 
+    private void initFragments() {
+        devicesFragment = new DevicesFragment();
+        mapFragment = new MapFragment();
+        identityFragment = new IdentityFragment();
+        consoleFragment = new ConsoleFragment();
+
+        android.support.v4.app.FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+
+        ft.add(R.id.fragment_container, devicesFragment);
+        ft.add(R.id.fragment_container, mapFragment);
+        ft.add(R.id.fragment_container, identityFragment);
+        ft.add(R.id.fragment_container, consoleFragment);
+
+        ft.hide(devicesFragment);
+        ft.hide(mapFragment);
+        ft.hide(identityFragment);
+        ft.hide(consoleFragment);
+
+        ft.commit();
+
+        currentFragment = consoleFragment;
+    }
+
     private void replaceFragment(Fragment fragment) {
-        getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, fragment).commit();
+        android.support.v4.app.FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+
+        ft.hide(currentFragment);
+        ft.show(fragment);
+        ft.commit();
+
+        currentFragment = fragment;
     }
 
     @Override
@@ -154,6 +192,48 @@ public class MainActivity extends AppCompatActivity implements
         stopLocationUpdates();
     }
 
+    // Device Indentity Methods
+
+    public String getMyName() {
+        return myName;
+    }
+
+    public double getMyLat() {
+        return myLat;
+    }
+
+    public double getMyLon() {
+        return myLon;
+    }
+
+    public int getVerbose() {
+        return verbose;
+    }
+
+    /*
+     * FRAGMENTS CALLBACK
+     */
+
+    @Override
+    public void onDeviceNameChanged(String message) {
+        myName = message;
+
+        String data = "SD " + myName + ";";
+
+        usbService.write(data.getBytes());
+        consoleFragment.appendToConsole("> " + data + "\n");
+    }
+
+    @Override
+    public void onVerboseLevelChanged(int level) {
+        verbose = level;
+    }
+
+    @Override
+    public void onNewCommandInvoked(String message) {
+        usbService.write(message.getBytes());
+    }
+
     /*
      * TRIANGULATION SERVICE
      */
@@ -163,7 +243,7 @@ public class MainActivity extends AppCompatActivity implements
         float longitude;
     }
 
-    // private List<DeviceInfo> nodeList = new ArrayList<DeviceInfo>();
+    private List<DeviceInfo> deviceList = new ArrayList<DeviceInfo>();
 
     private void updateDeviceLocation(String data) {
         String[] chunks = data.split(" ");
@@ -173,14 +253,9 @@ public class MainActivity extends AppCompatActivity implements
         deviceInfo.latitude = Float.parseFloat(chunks[2]);
         deviceInfo.longitude = Float.parseFloat(chunks[3]);
 
-        drawDeviceOnMap(deviceInfo);
+        // deviceList.add();
 
-        display.append("Device " + deviceInfo.name + " updated\n");
-        logd
-    }
-
-    private void drawDeviceOnMap(DeviceInfo deviceInfo) {
-
+        consoleFragment.appendToConsole("Device " + deviceInfo.name + " updated\n");
     }
 
     /*
@@ -200,11 +275,14 @@ public class MainActivity extends AppCompatActivity implements
                 if (locationResult != null) {
                     for (Location location : locationResult.getLocations()) {
                         if (usbService != null) {
+                            myLat = location.getLatitude();
+                            myLon = location.getLongitude();
+
                             String data = "SP " +
                                     String.valueOf(round(location.getLatitude(), 6)) + " " +
                                     String.valueOf(round(location.getLongitude(), 6)) + ";";
-                            display.append("> " + data + "\n");
 
+                            consoleFragment.appendToConsole("> " + data + "\n");
                             usbService.write(data.getBytes());
                         }
                     }
@@ -284,19 +362,19 @@ public class MainActivity extends AppCompatActivity implements
         public void onReceive(Context context, Intent intent) {
             switch (intent.getAction()) {
                 case UsbService.ACTION_USB_PERMISSION_GRANTED: // USB PERMISSION GRANTED
-                    display.append("USB Ready\n");
+                    consoleFragment.appendToConsole("USB Ready\n");
                     break;
                 case UsbService.ACTION_USB_PERMISSION_NOT_GRANTED: // USB PERMISSION NOT GRANTED
-                    display.append("USB Permission not granted\n");
+                    consoleFragment.appendToConsole("USB Permission not granted\n");
                     break;
                 case UsbService.ACTION_NO_USB: // NO USB CONNECTED
-                    display.append("No USB connected\n");
+                    consoleFragment.appendToConsole("No USB connected\n");
                     break;
                 case UsbService.ACTION_USB_DISCONNECTED: // USB DISCONNECTED
-                    display.append("USB disconnected\n");
+                    consoleFragment.appendToConsole("USB disconnected\n");
                     break;
                 case UsbService.ACTION_USB_NOT_SUPPORTED: // USB NOT SUPPORTED
-                    display.append("USB device not supported\n");
+                    consoleFragment.appendToConsole("USB device not supported\n");
                     break;
             }
         }
@@ -352,13 +430,13 @@ public class MainActivity extends AppCompatActivity implements
 
     private void handleVerbose(String data) {
         if (verbose > 0 && (data.startsWith("OK") || data.startsWith("ERR"))) {
-            display.append(data + "\n");
+            consoleFragment.appendToConsole(data + "\n");
         }
         else if (verbose > 1 && data.startsWith("nRF24L01>")) {
-            display.append(data + "\n");
+            consoleFragment.appendToConsole(data + "\n");
         }
         else if (verbose > 2 && data.startsWith("nRF24L01<")) {
-            display.append(data + "\n");
+            consoleFragment.appendToConsole(data + "\n");
         }
 
         if (data.startsWith("nRF24L01<")) {

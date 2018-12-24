@@ -33,7 +33,7 @@
             android:text="TRI1"/>
 
         <Button
-            android:id="@+id/btnChange"
+            android:id="@+id/btnChangeDevName"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Change"/>
@@ -42,12 +42,11 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingTop="8dp">
+        android:paddingTop="4dp">
         <TextView
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Latitude: "/>
+            android:text="Latitude:     "/>
         <TextView
             android:id="@+id/txMyLat"
             android:layout_width="0dp"
@@ -61,10 +60,9 @@
         android:layout_height="wrap_content"
         android:paddingTop="8dp">
         <TextView
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Longitude: "/>
+            android:text="Longitude:  "/>
         <TextView
             android:id="@+id/txMyLon"
             android:layout_width="0dp"
@@ -72,4 +70,32 @@
             android:layout_weight="3"
             android:text="-"/>
     </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="16dp">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Verbose Level (0-3): "/>
+        <EditText
+            android:id="@+id/txVerbose"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="1"/>
+        <Button
+            android:id="@+id/btnChangeVerbose"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Change"/>
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/btnRefresh"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Refresh All"
+        android:layout_marginTop="16dp"/>
 </LinearLayout>

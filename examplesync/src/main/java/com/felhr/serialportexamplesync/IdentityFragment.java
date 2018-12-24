@@ -92,6 +92,31 @@ public class IdentityFragment extends Fragment {
             }
         });
 
+        // DEBUGGING
+        Button btnInsertDev = view.findViewById(R.id.btnID);
+        Button btnIterate = view.findViewById(R.id.btnIT);
+
+        btnInsertDev.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                MainActivity m = (MainActivity) mActivity.get();
+
+                m.updateDeviceLocation("nRF24L01< TRI3 -7.285421 112.799283");
+                m.updateDeviceLocation("nRF24L01< TRI4 -7.282406 112.794129");
+                m.updateDeviceLocation("nRF24L01< TRI3 -7.285421 112.799284");
+                m.updateDeviceLocation("nRF24L01< TRI3 -7.285421 112.799285");
+                m.updateDeviceLocation("nRF24L01< TRI4 -7.282406 112.794130");
+            }
+        });
+
+        btnIterate.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                MainActivity m = (MainActivity) mActivity.get();
+                m.iter();
+            }
+        });
+
         return view;
     }
 

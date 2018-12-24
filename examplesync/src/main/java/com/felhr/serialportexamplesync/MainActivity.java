@@ -40,6 +40,8 @@ import com.google.android.gms.location.LocationServices;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
 
@@ -195,7 +197,7 @@ public class MainActivity extends AppCompatActivity
         stopLocationUpdates();
     }
 
-    // Device Indentity Methods
+    // Device Identity Methods
 
     public String getMyName() {
         return myName;
@@ -246,19 +248,34 @@ public class MainActivity extends AppCompatActivity
         float longitude;
     }
 
-    private List<DeviceInfo> deviceList = new ArrayList<DeviceInfo>();
+    private Hashtable<String, DeviceInfo> deviceList = new Hashtable <String, DeviceInfo>();
 
-    private void updateDeviceLocation(String data) {
+    public void updateDeviceLocation(String data) {
         String[] chunks = data.split(" ");
 
         DeviceInfo deviceInfo = new DeviceInfo();
+
         deviceInfo.name = chunks[1];
         deviceInfo.latitude = Float.parseFloat(chunks[2]);
         deviceInfo.longitude = Float.parseFloat(chunks[3]);
 
-        // deviceList.add();
+        if(deviceList.contains(deviceInfo.name)) {
+            deviceList.remove(deviceInfo.name);
+        }
+
+        deviceList.put(deviceInfo.name, deviceInfo);
 
         consoleFragment.appendToConsole("Device " + deviceInfo.name + " updated\n");
+    }
+
+    // DEBUGGING
+    public void iter() {
+        for(Enumeration e = deviceList.elements(); e.hasMoreElements(); ) {
+            DeviceInfo dv = (DeviceInfo) e.nextElement();
+
+            Log.d(TAG, "iter: Name: " + dv.name + ", Lat: " + String.valueOf(dv.latitude)
+                    + ", Lon: " + String.valueOf(dv.longitude));
+        }
     }
 
     /*
@@ -363,23 +380,23 @@ public class MainActivity extends AppCompatActivity
     private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            switch (intent.getAction()) {
-                case UsbService.ACTION_USB_PERMISSION_GRANTED: // USB PERMISSION GRANTED
-                    consoleFragment.appendToConsole("USB Ready\n");
-                    break;
-                case UsbService.ACTION_USB_PERMISSION_NOT_GRANTED: // USB PERMISSION NOT GRANTED
-                    consoleFragment.appendToConsole("USB Permission not granted\n");
-                    break;
-                case UsbService.ACTION_NO_USB: // NO USB CONNECTED
-                    consoleFragment.appendToConsole("No USB connected\n");
-                    break;
-                case UsbService.ACTION_USB_DISCONNECTED: // USB DISCONNECTED
-                    consoleFragment.appendToConsole("USB disconnected\n");
-                    break;
-                case UsbService.ACTION_USB_NOT_SUPPORTED: // USB NOT SUPPORTED
-                    consoleFragment.appendToConsole("USB device not supported\n");
-                    break;
-            }
+        switch (intent.getAction()) {
+            case UsbService.ACTION_USB_PERMISSION_GRANTED: // USB PERMISSION GRANTED
+                consoleFragment.appendToConsole("USB Ready\n");
+                break;
+            case UsbService.ACTION_USB_PERMISSION_NOT_GRANTED: // USB PERMISSION NOT GRANTED
+                consoleFragment.appendToConsole("USB Permission not granted\n");
+                break;
+            case UsbService.ACTION_NO_USB: // NO USB CONNECTED
+                consoleFragment.appendToConsole("No USB connected\n");
+                break;
+            case UsbService.ACTION_USB_DISCONNECTED: // USB DISCONNECTED
+                consoleFragment.appendToConsole("USB disconnected\n");
+                break;
+            case UsbService.ACTION_USB_NOT_SUPPORTED: // USB NOT SUPPORTED
+                consoleFragment.appendToConsole("USB device not supported\n");
+                break;
+        }
         }
     };
 

@@ -44,14 +44,14 @@ public class ConsoleFragment extends Fragment {
         btnSend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String msg = txCmd.getText().toString();
+            String msg = txCmd.getText().toString();
 
-                if(!msg.equals("")) {
-                    consoleMessageListener.onNewCommandInvoked(msg);
+            if(!msg.equals("")) {
+                consoleMessageListener.onNewCommandInvoked(msg);
 
-                    txConsole.append("> " + msg + "\n");
-                    txCmd.setText("");
-                }
+                txConsole.append("> " + msg + "\n");
+                txCmd.setText("");
+            }
             }
         });
 

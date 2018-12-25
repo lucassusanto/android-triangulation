@@ -54,41 +54,41 @@ public class IdentityFragment extends Fragment {
         btnChangeDevName.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                MainActivity m = (MainActivity) mActivity.get();
-                String newName = txMyName.getText().toString();
+            MainActivity m = (MainActivity) mActivity.get();
+            String newName = txMyName.getText().toString();
 
-                if(!newName.equals("")) {
-                    identityMessageListener.onDeviceNameChanged(newName);
-                    Toast.makeText(m, "Device name was changed!", Toast.LENGTH_SHORT).show();
-                }
-                else {
-                    Toast.makeText(m, "Device name cannot be empty!", Toast.LENGTH_SHORT).show();
-                }
+            if(!newName.equals("")) {
+                identityMessageListener.onDeviceNameChanged(newName);
+                Toast.makeText(m, "Device name was changed!", Toast.LENGTH_SHORT).show();
+            }
+            else {
+                Toast.makeText(m, "Device name cannot be empty!", Toast.LENGTH_SHORT).show();
+            }
             }
         });
 
         btnChangeVerbose.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                MainActivity m = (MainActivity) mActivity.get();
-                int newVal = Integer.parseInt(txVerbose.getText().toString());
+            MainActivity m = (MainActivity) mActivity.get();
+            int newVal = Integer.parseInt(txVerbose.getText().toString());
 
-                identityMessageListener.onVerboseLevelChanged(newVal);
-                Toast.makeText(m, "Verbose level was changed!", Toast.LENGTH_SHORT).show();
+            identityMessageListener.onVerboseLevelChanged(newVal);
+            Toast.makeText(m, "Verbose level was changed!", Toast.LENGTH_SHORT).show();
             }
         });
 
         btnRefresh.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                MainActivity m = (MainActivity) mActivity.get();
+            MainActivity m = (MainActivity) mActivity.get();
 
-                txMyName.setText(m.getMyName());
-                txMyLat.setText(String.valueOf(m.getMyLat()));
-                txMyLon.setText(String.valueOf(m.getMyLon()));
-                txVerbose.setText(String.valueOf(m.getVerbose()));
+            txMyName.setText(m.getMyName());
+            txMyLat.setText(String.valueOf(m.getMyLat()));
+            txMyLon.setText(String.valueOf(m.getMyLon()));
+            txVerbose.setText(String.valueOf(m.getVerbose()));
 
-                Toast.makeText(m, "All value was refreshed", Toast.LENGTH_SHORT).show();
+            Toast.makeText(m, "All value was refreshed", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -100,31 +100,31 @@ public class IdentityFragment extends Fragment {
         btnInsertDev.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                MainActivity m = (MainActivity) mActivity.get();
+            MainActivity m = (MainActivity) mActivity.get();
 
-                m.updateDeviceLocation("nRF24L01< TRI3 -7.285421 112.799283");
-                m.updateDeviceLocation("nRF24L01< TRI4 -7.282406 112.794129");
-                m.updateDeviceLocation("nRF24L01< TRI3 -7.285421 112.799284");
-                m.updateDeviceLocation("nRF24L01< TRI3 -7.285421 112.799285");
-                m.updateDeviceLocation("nRF24L01< TRI4 -7.282406 112.794130");
+            m.updateDeviceLocation("nRF24L01< TRI3 -7.285421 112.799283");
+            m.updateDeviceLocation("nRF24L01< TRI4 -7.282406 112.794129");
+            m.updateDeviceLocation("nRF24L01< TRI3 -7.285421 112.799284");
+            m.updateDeviceLocation("nRF24L01< TRI3 -7.285421 112.799285");
+            m.updateDeviceLocation("nRF24L01< TRI4 -7.282406 112.794130");
             }
         });
 
         btnInsertDev2.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                MainActivity m = (MainActivity) mActivity.get();
+            MainActivity m = (MainActivity) mActivity.get();
 
-                m.updateDeviceLocation("nRF24L01< TRI3 1.1 2.2");
-                m.updateDeviceLocation("nRF24L01< TRI4 1.1 2.2");
+            m.updateDeviceLocation("nRF24L01< TRI3 1.1 2.2");
+            m.updateDeviceLocation("nRF24L01< TRI4 1.1 2.2");
             }
         });
 
         btnIterate.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                MainActivity m = (MainActivity) mActivity.get();
-                m.iter();
+            MainActivity m = (MainActivity) mActivity.get();
+            m.iter();
             }
         });
 

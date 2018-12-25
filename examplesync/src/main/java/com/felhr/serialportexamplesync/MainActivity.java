@@ -77,14 +77,12 @@ public class MainActivity
     private UsbService usbService;
     private MyHandler mHandler;
 
+    // My Identity
+    private Device myIdentity;
+
     // Verbose Levels
     // 0: None; 1: OK, ERR; 2: NRF SEND; 3: NRF RECV
     private int verbose;
-
-    // My Identity
-    private String myName = "TRI1";
-    private double myLat;
-    private double myLon;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,6 +93,7 @@ public class MainActivity
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        mHandler = new MyHandler(this);
         drawer = findViewById(R.id.drawer_layout);
 
         NavigationView navigationView = findViewById(R.id.nav_view);
@@ -116,14 +115,12 @@ public class MainActivity
         // Triangulation
         mDeviceList = new ArrayList<>();
         devAdapter = new DeviceListAdapter(this, mDeviceList);
+        myIdentity = new Device("TRI1", 0.0, 0.0);
 
         // Location Service
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
         initLocationRequest(10000, 3000);
         setLocationCallBack();
-
-        myLat = 0.0;
-        myLon = 0.0;
 
         // Verbose Level
         verbose = 1;
@@ -213,16 +210,14 @@ public class MainActivity
     // Device Identity Methods
 
     public String getMyName() {
-        return myName;
+        return myIdentity.getName();
     }
     public double getMyLat() {
-        return myLat;
+        return myIdentity.getLatitude();
     }
-
     public double getMyLon() {
-        return myLon;
+        return myIdentity.getLongitude();
     }
-
     public int getVerbose() {
         return verbose;
     }
@@ -234,10 +229,10 @@ public class MainActivity
     // Identity Fragment
 
     @Override
-    public void onDeviceNameChanged(String message) {
-        myName = message;
+    public void onDeviceNameChanged(String newName) {
+        myIdentity.setName(newName);
 
-        String data = "SD " + myName + ";";
+        String data = "SD " + newName + ";";
 
         usbService.write(data.getBytes());
         consoleFragment.appendToConsole("> " + data + "\n");
@@ -309,8 +304,8 @@ public class MainActivity
                 if (locationResult != null) {
                     for (Location location : locationResult.getLocations()) {
                         if (usbService != null) {
-                            myLat = location.getLatitude();
-                            myLon = location.getLongitude();
+                            myIdentity.setLatitude(location.getLatitude());
+                            myIdentity.setLongitude(location.getLongitude());
 
                             String data = "SP " +
                                     String.valueOf(round(location.getLatitude(), 6)) + " " +
@@ -394,23 +389,23 @@ public class MainActivity
     private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-        switch (intent.getAction()) {
-            case UsbService.ACTION_USB_PERMISSION_GRANTED: // USB PERMISSION GRANTED
-                consoleFragment.appendToConsole("USB Ready\n");
-                break;
-            case UsbService.ACTION_USB_PERMISSION_NOT_GRANTED: // USB PERMISSION NOT GRANTED
-                consoleFragment.appendToConsole("USB Permission not granted\n");
-                break;
-            case UsbService.ACTION_NO_USB: // NO USB CONNECTED
-                consoleFragment.appendToConsole("No USB connected\n");
-                break;
-            case UsbService.ACTION_USB_DISCONNECTED: // USB DISCONNECTED
-                consoleFragment.appendToConsole("USB disconnected\n");
-                break;
-            case UsbService.ACTION_USB_NOT_SUPPORTED: // USB NOT SUPPORTED
-                consoleFragment.appendToConsole("USB device not supported\n");
-                break;
-        }
+            switch (intent.getAction()) {
+                case UsbService.ACTION_USB_PERMISSION_GRANTED: // USB PERMISSION GRANTED
+                    consoleFragment.appendToConsole("USB Ready\n");
+                    break;
+                case UsbService.ACTION_USB_PERMISSION_NOT_GRANTED: // USB PERMISSION NOT GRANTED
+                    consoleFragment.appendToConsole("USB Permission not granted\n");
+                    break;
+                case UsbService.ACTION_NO_USB: // NO USB CONNECTED
+                    consoleFragment.appendToConsole("No USB connected\n");
+                    break;
+                case UsbService.ACTION_USB_DISCONNECTED: // USB DISCONNECTED
+                    consoleFragment.appendToConsole("USB disconnected\n");
+                    break;
+                case UsbService.ACTION_USB_NOT_SUPPORTED: // USB NOT SUPPORTED
+                    consoleFragment.appendToConsole("USB device not supported\n");
+                    break;
+            }
         }
     };
 

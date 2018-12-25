@@ -36,10 +36,10 @@ public class DevicesFragment extends Fragment {
         btnRefresh.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                MainActivity m = (MainActivity) mActivity.get();
-                lvDevice.setAdapter(m.devAdapter);
+            MainActivity m = (MainActivity) mActivity.get();
+            lvDevice.setAdapter(m.devAdapter);
 
-                Toast.makeText(m, "Device list was updated!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(m, "Device list was updated!", Toast.LENGTH_SHORT).show();
             }
         });
 

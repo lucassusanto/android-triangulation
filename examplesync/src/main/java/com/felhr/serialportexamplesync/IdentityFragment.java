@@ -94,6 +94,7 @@ public class IdentityFragment extends Fragment {
 
         // DEBUGGING
         Button btnInsertDev = view.findViewById(R.id.btnID);
+        Button btnInsertDev2 = view.findViewById(R.id.btnID2);
         Button btnIterate = view.findViewById(R.id.btnIT);
 
         btnInsertDev.setOnClickListener(new View.OnClickListener() {
@@ -106,6 +107,16 @@ public class IdentityFragment extends Fragment {
                 m.updateDeviceLocation("nRF24L01< TRI3 -7.285421 112.799284");
                 m.updateDeviceLocation("nRF24L01< TRI3 -7.285421 112.799285");
                 m.updateDeviceLocation("nRF24L01< TRI4 -7.282406 112.794130");
+            }
+        });
+
+        btnInsertDev2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                MainActivity m = (MainActivity) mActivity.get();
+
+                m.updateDeviceLocation("nRF24L01< TRI3 1.1 2.2");
+                m.updateDeviceLocation("nRF24L01< TRI4 1.1 2.2");
             }
         });
 

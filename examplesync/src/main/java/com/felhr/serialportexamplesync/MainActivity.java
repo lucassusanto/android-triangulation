@@ -29,6 +29,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -42,22 +43,30 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener, ConsoleFragment.OnConsoleMessageListener,
-        IdentityFragment.OnIdentityMessageListener{
+public class MainActivity
+        extends AppCompatActivity
+        implements NavigationView.OnNavigationItemSelectedListener,
+        IdentityFragment.OnIdentityMessageListener,
+        ConsoleFragment.OnConsoleMessageListener {
 
     private static final String TAG = "MainActivity";
 
     // UI
     private DrawerLayout drawer;
+
     private DevicesFragment devicesFragment;
     private MapFragment mapFragment;
     private IdentityFragment identityFragment;
     private ConsoleFragment consoleFragment;
     private Fragment currentFragment;
+
+    // Triangulation
+    public List<Device> mDeviceList;
+    public DeviceListAdapter devAdapter;
 
     // Location
     private FusedLocationProviderClient mFusedLocationClient;
@@ -103,6 +112,10 @@ public class MainActivity extends AppCompatActivity
             replaceFragment(consoleFragment);
             navigationView.setCheckedItem(R.id.nav_console);
         }
+
+        // Triangulation
+        mDeviceList = new ArrayList<>();
+        devAdapter = new DeviceListAdapter(this, mDeviceList);
 
         // Location Service
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
@@ -202,7 +215,6 @@ public class MainActivity extends AppCompatActivity
     public String getMyName() {
         return myName;
     }
-
     public double getMyLat() {
         return myLat;
     }
@@ -219,6 +231,8 @@ public class MainActivity extends AppCompatActivity
      * FRAGMENTS CALLBACK
      */
 
+    // Identity Fragment
+
     @Override
     public void onDeviceNameChanged(String message) {
         myName = message;
@@ -234,6 +248,8 @@ public class MainActivity extends AppCompatActivity
         verbose = level;
     }
 
+    // Console Fragment
+
     @Override
     public void onNewCommandInvoked(String message) {
         usbService.write(message.getBytes());
@@ -242,39 +258,37 @@ public class MainActivity extends AppCompatActivity
     /*
      * TRIANGULATION SERVICE
      */
-    class DeviceInfo {
-        String name;
-        float latitude;
-        float longitude;
+
+    private void removeIfContains(List<Device> list, Device item) {
+        String itemName = item.getName();
+        int listSize = list.size();
+
+        for(int i = 0; i < listSize; i++)
+            if(list.get(i).getName().equals(itemName)) {
+                list.remove(i);
+                return;
+            }
     }
 
-    private Hashtable<String, DeviceInfo> deviceList = new Hashtable <String, DeviceInfo>();
-
+    // DEBUGGING: Change to private later
     public void updateDeviceLocation(String data) {
         String[] chunks = data.split(" ");
+        Device device = new Device(chunks[1], Float.parseFloat(chunks[2]), Float.parseFloat(chunks[3]));
 
-        DeviceInfo deviceInfo = new DeviceInfo();
+        removeIfContains(mDeviceList, device);
+        mDeviceList.add(device);
 
-        deviceInfo.name = chunks[1];
-        deviceInfo.latitude = Float.parseFloat(chunks[2]);
-        deviceInfo.longitude = Float.parseFloat(chunks[3]);
-
-        if(deviceList.contains(deviceInfo.name)) {
-            deviceList.remove(deviceInfo.name);
-        }
-
-        deviceList.put(deviceInfo.name, deviceInfo);
-
-        consoleFragment.appendToConsole("Device " + deviceInfo.name + " updated\n");
+        consoleFragment.appendToConsole("Device " + device.getName() + " updated\n");
     }
 
-    // DEBUGGING
+    // DEBUGGING: Change to private later
     public void iter() {
-        for(Enumeration e = deviceList.elements(); e.hasMoreElements(); ) {
-            DeviceInfo dv = (DeviceInfo) e.nextElement();
+        int listSize = mDeviceList.size();
 
-            Log.d(TAG, "iter: Name: " + dv.name + ", Lat: " + String.valueOf(dv.latitude)
-                    + ", Lon: " + String.valueOf(dv.longitude));
+        for(int i = 0; i < listSize; i++) {
+            Device item = mDeviceList.get(i);
+            Log.d(TAG, "iter: Name: " + item.getName() + ", Lat: " + String.valueOf(item.getLatitude())
+                    + ", Lon: " + String.valueOf(item.getLongitude()));
         }
     }
 

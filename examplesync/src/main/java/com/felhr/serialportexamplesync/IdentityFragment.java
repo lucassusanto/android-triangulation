@@ -82,9 +82,8 @@ public class IdentityFragment extends Fragment {
             MainActivity m = (MainActivity) mActivity.get();
 
             txMyName.setText(m.getMyName());
-            txMyLat.setText(String.valueOf(m.getMyLat()));
-            txMyLon.setText(String.valueOf(m.getMyLon()));
             txVerbose.setText(String.valueOf(m.getVerbose()));
+            IdentityFragment.this.updateMyPosition();
 
             Toast.makeText(m, "All value was refreshed", Toast.LENGTH_SHORT).show();
             }
@@ -142,5 +141,17 @@ public class IdentityFragment extends Fragment {
         catch(ClassCastException e) {
             throw new ClassCastException(activity.toString() + " must override onDeviceNameChanged");
         }
+    }
+
+    public void updateMyPosition() {
+        MainActivity m = (MainActivity) mActivity.get();
+
+        txMyLat.setText(String.valueOf(round(m.getMyLat(), 6)));
+        txMyLon.setText(String.valueOf(round(m.getMyLon(), 6)));
+    }
+
+    private double round(double val, int decimals) {
+        double div = Math.pow(10, decimals);
+        return Math.round(val * div) / div;
     }
 }

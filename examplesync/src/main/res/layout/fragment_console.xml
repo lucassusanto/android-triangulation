@@ -31,7 +31,6 @@
         android:layout_weight="1"
         android:background="@drawable/layout_border"
         android:scrollbars="vertical"
-        android:text=""
         android:textColor="@color/colorBlack" />
 
     <LinearLayout

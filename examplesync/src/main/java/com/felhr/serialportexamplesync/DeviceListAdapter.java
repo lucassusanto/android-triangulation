@@ -42,11 +42,16 @@ public class DeviceListAdapter extends BaseAdapter {
         TextView txDevLon = view.findViewById(R.id.devLon);
 
         txDevName.setText(dev.getName());
-        txDevLat.setText(String.valueOf(dev.getLatitude()));
-        txDevLon.setText(String.valueOf(dev.getLongitude()));
+        txDevLat.setText("Latitude:  " + String.valueOf(round(dev.getLatitude(), 6)));
+        txDevLon.setText("Longitude: " + String.valueOf(round(dev.getLongitude(), 6)));
 
         view.setTag(dev.getName());
 
         return view;
+    }
+
+    private double round(double val, int decimals) {
+        double div = Math.pow(10, decimals);
+        return Math.round(val * div) / div;
     }
 }

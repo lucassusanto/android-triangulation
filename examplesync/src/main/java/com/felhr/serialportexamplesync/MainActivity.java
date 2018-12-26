@@ -302,6 +302,7 @@ public class MainActivity
                     if (usbService != null) {
                         myIdentity.setLatitude(location.getLatitude());
                         myIdentity.setLongitude(location.getLongitude());
+                        identityFragment.updateMyPosition();
 
                         String data = "SP " +
                                 String.valueOf(round(location.getLatitude(), 6)) + " " +

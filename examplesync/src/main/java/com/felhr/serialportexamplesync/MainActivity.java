@@ -220,11 +220,11 @@ public class MainActivity
 
     @Override
     public void onDeviceNameChanged(String newName) {
-        myIdentity.setName(newName);
-
         String data = "SD " + newName + ";";
 
+        myIdentity.setName(newName);
         usbService.write(data.getBytes());
+
         consoleFragment.appendToConsole("> " + data + "\n");
     }
 
@@ -244,28 +244,19 @@ public class MainActivity
      * TRIANGULATION SERVICE
      */
 
-    private void removeIfContains(List<Device> list, Device item) {
-        String itemName = item.getName();
-        int listSize = list.size();
-
-        for(int i = 0; i < listSize; i++)
-            if(list.get(i).getName().equals(itemName)) {
-                list.remove(i);
-                return;
-            }
-    }
-
     // DEBUGGING: Change to private later
     public void updateDeviceLocation(String data) {
         String[] chunks = data.split(" ");
         Device device = new Device(chunks[1], Float.parseFloat(chunks[2]), Float.parseFloat(chunks[3]));
 
+        // TODO: make multi-threading?
+
         removeIfContains(mDeviceList, device);
         mDeviceList.add(device);
 
-        // Notify related fragments
-        // mapFragment.updateDevices(); // DEBUGGING
+        mapFragment.updateMap();
         devicesFragment.updateDevicesList();
+
         consoleFragment.appendToConsole("Device " + device.getName() + " updated\n");
     }
 
@@ -278,6 +269,17 @@ public class MainActivity
             Log.d(TAG, "iter: Name: " + item.getName() + ", Lat: " + String.valueOf(item.getLatitude())
                     + ", Lon: " + String.valueOf(item.getLongitude()));
         }
+    }
+
+    private void removeIfContains(List<Device> list, Device item) {
+        String itemName = item.getName();
+        int listSize = list.size();
+
+        for(int i = 0; i < listSize; i++)
+            if(list.get(i).getName().equals(itemName)) {
+                list.remove(i);
+                return;
+            }
     }
 
     /*
@@ -295,21 +297,21 @@ public class MainActivity
         mLocationCallback = (new LocationCallback() {
             @Override
             public void onLocationResult(LocationResult locationResult) {
-                if (locationResult != null) {
-                    for (Location location : locationResult.getLocations()) {
-                        if (usbService != null) {
-                            myIdentity.setLatitude(location.getLatitude());
-                            myIdentity.setLongitude(location.getLongitude());
+            if (locationResult != null) {
+                for (Location location : locationResult.getLocations()) {
+                    if (usbService != null) {
+                        myIdentity.setLatitude(location.getLatitude());
+                        myIdentity.setLongitude(location.getLongitude());
 
-                            String data = "SP " +
-                                    String.valueOf(round(location.getLatitude(), 6)) + " " +
-                                    String.valueOf(round(location.getLongitude(), 6)) + ";";
+                        String data = "SP " +
+                                String.valueOf(round(location.getLatitude(), 6)) + " " +
+                                String.valueOf(round(location.getLongitude(), 6)) + ";";
 
-                            consoleFragment.appendToConsole("> " + data + "\n");
-                            usbService.write(data.getBytes());
-                        }
+                        consoleFragment.appendToConsole("> " + data + "\n");
+                        usbService.write(data.getBytes());
                     }
                 }
+            }
             }
         });
     }
@@ -338,6 +340,7 @@ public class MainActivity
     /*
      * USB SERIAL DRIVER
      */
+
     private final ServiceConnection usbConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName arg0, IBinder arg1) {
@@ -369,11 +372,13 @@ public class MainActivity
 
     private void setFilters() {
         IntentFilter filter = new IntentFilter();
+
         filter.addAction(UsbService.ACTION_USB_PERMISSION_GRANTED);
         filter.addAction(UsbService.ACTION_NO_USB);
         filter.addAction(UsbService.ACTION_USB_DISCONNECTED);
         filter.addAction(UsbService.ACTION_USB_NOT_SUPPORTED);
         filter.addAction(UsbService.ACTION_USB_PERMISSION_NOT_GRANTED);
+
         registerReceiver(mUsbReceiver, filter);
     }
 
@@ -383,23 +388,23 @@ public class MainActivity
     private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            switch (intent.getAction()) {
-                case UsbService.ACTION_USB_PERMISSION_GRANTED: // USB PERMISSION GRANTED
-                    consoleFragment.appendToConsole("USB Ready\n");
-                    break;
-                case UsbService.ACTION_USB_PERMISSION_NOT_GRANTED: // USB PERMISSION NOT GRANTED
-                    consoleFragment.appendToConsole("USB Permission not granted\n");
-                    break;
-                case UsbService.ACTION_NO_USB: // NO USB CONNECTED
-                    consoleFragment.appendToConsole("No USB connected\n");
-                    break;
-                case UsbService.ACTION_USB_DISCONNECTED: // USB DISCONNECTED
-                    consoleFragment.appendToConsole("USB disconnected\n");
-                    break;
-                case UsbService.ACTION_USB_NOT_SUPPORTED: // USB NOT SUPPORTED
-                    consoleFragment.appendToConsole("USB device not supported\n");
-                    break;
-            }
+        switch (intent.getAction()) {
+            case UsbService.ACTION_USB_PERMISSION_GRANTED: // USB PERMISSION GRANTED
+                consoleFragment.appendToConsole("USB Ready\n");
+                break;
+            case UsbService.ACTION_USB_PERMISSION_NOT_GRANTED: // USB PERMISSION NOT GRANTED
+                consoleFragment.appendToConsole("USB Permission not granted\n");
+                break;
+            case UsbService.ACTION_NO_USB: // NO USB CONNECTED
+                consoleFragment.appendToConsole("No USB connected\n");
+                break;
+            case UsbService.ACTION_USB_DISCONNECTED: // USB DISCONNECTED
+                consoleFragment.appendToConsole("USB disconnected\n");
+                break;
+            case UsbService.ACTION_USB_NOT_SUPPORTED: // USB NOT SUPPORTED
+                consoleFragment.appendToConsole("USB device not supported\n");
+                break;
+        }
         }
     };
 

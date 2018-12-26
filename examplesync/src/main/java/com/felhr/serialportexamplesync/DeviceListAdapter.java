@@ -35,16 +35,17 @@ public class DeviceListAdapter extends BaseAdapter {
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         View view = View.inflate(mContext, R.layout.item_device, null);
+        Device dev = mDeviceList.get(position);
 
         TextView txDevName = view.findViewById(R.id.devName);
         TextView txDevLat = view.findViewById(R.id.devLat);
         TextView txDevLon = view.findViewById(R.id.devLon);
 
-        txDevName.setText(mDeviceList.get(position).getName());
-        txDevLat.setText(String.valueOf(mDeviceList.get(position).getLatitude()));
-        txDevLon.setText(String.valueOf(mDeviceList.get(position).getLongitude()));
+        txDevName.setText(dev.getName());
+        txDevLat.setText(String.valueOf(dev.getLatitude()));
+        txDevLon.setText(String.valueOf(dev.getLongitude()));
 
-        view.setTag(mDeviceList.get(position).getName());
+        view.setTag(dev.getName());
 
         return view;
     }

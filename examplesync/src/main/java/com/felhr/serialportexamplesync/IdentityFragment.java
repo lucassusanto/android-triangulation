@@ -27,9 +27,7 @@ public class IdentityFragment extends Fragment {
     private Button btnChangeVerbose;
     private Button btnRefresh;
 
-    /*
-     *  MainActivity <- ConsoleFragment
-     */
+    // MainActivity <- ConsoleFragment
     OnIdentityMessageListener identityMessageListener;
 
     public interface OnIdentityMessageListener {

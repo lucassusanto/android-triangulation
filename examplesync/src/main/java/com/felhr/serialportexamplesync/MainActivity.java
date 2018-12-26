@@ -1,8 +1,6 @@
 package com.felhr.serialportexamplesync;
 
 import android.Manifest;
-import android.app.Activity;
-import android.app.FragmentTransaction;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -26,11 +24,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ListView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -41,9 +34,6 @@ import com.google.android.gms.location.LocationServices;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -273,6 +263,9 @@ public class MainActivity
         removeIfContains(mDeviceList, device);
         mDeviceList.add(device);
 
+        // Notify related fragments
+        // mapFragment.updateDevices(); // DEBUGGING
+        devicesFragment.updateDevicesList();
         consoleFragment.appendToConsole("Device " + device.getName() + " updated\n");
     }
 
@@ -290,6 +283,7 @@ public class MainActivity
     /*
      * LOCATION SERVICE
      */
+
     private void initLocationRequest(long interval, long fastestInterval) {
         mLocationRequest = new LocationRequest();
         mLocationRequest.setInterval(interval);

@@ -1,6 +1,5 @@
 package com.felhr.serialportexamplesync;
 
-import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -13,8 +12,6 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.List;
 
 public class DevicesFragment extends Fragment {
     private WeakReference mActivity;
@@ -30,16 +27,11 @@ public class DevicesFragment extends Fragment {
         lvDevice = view.findViewById(R.id.lv_devices);
         btnRefresh = view.findViewById(R.id.btnRefresh);
 
-        MainActivity m = (MainActivity) mActivity.get();
-        lvDevice.setAdapter(m.devAdapter);
-
         btnRefresh.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-            MainActivity m = (MainActivity) mActivity.get();
-            lvDevice.setAdapter(m.devAdapter);
-
-            Toast.makeText(m, "Device list was updated!", Toast.LENGTH_SHORT).show();
+                DevicesFragment.this.updateDevicesList();
+                Toast.makeText((MainActivity) mActivity.get(), "Device list was updated!", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -50,5 +42,15 @@ public class DevicesFragment extends Fragment {
     public void onAttach(Context context) {
         super.onAttach(context);
         mActivity = new WeakReference(context);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        updateDevicesList();
+    }
+
+    public void updateDevicesList() {
+        lvDevice.setAdapter(((MainActivity) mActivity.get()).devAdapter);
     }
 }

@@ -22,9 +22,7 @@ public class ConsoleFragment extends Fragment {
     private Button btnSend;
     private Button btnClear;
 
-    /*
-     *  MainActivity <- ConsoleFragment
-     */
+    // MainActivity <- ConsoleFragment
     OnConsoleMessageListener consoleMessageListener;
 
     public interface OnConsoleMessageListener {
@@ -79,9 +77,7 @@ public class ConsoleFragment extends Fragment {
         }
     }
 
-    /*
-     *  ConsoleFragment <- MainActivity
-     */
+    // ConsoleFragment <- MainActivity
     public void appendToConsole(String msg) {
         txConsole.append(msg);
     }

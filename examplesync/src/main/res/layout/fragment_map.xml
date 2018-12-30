@@ -8,7 +8,8 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:layout_marginBottom="48dp">
 
         <TextView
             android:layout_width="0dp"
@@ -27,10 +28,8 @@
             android:text="Refresh"/>
     </LinearLayout>
 
-    <ImageView
-        android:id="@+id/map_area"
+    <com.felhr.serialportexamplesync.views.CustomView
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@drawable/layout_border"/>
+        android:layout_height="300dp" />
 
 </LinearLayout>

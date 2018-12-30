@@ -22,7 +22,6 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.MenuItem;
 import android.widget.Toast;
 
@@ -245,7 +244,7 @@ public class MainActivity
      */
 
     // DEBUGGING: Change to private later
-    public void updateDeviceLocation(String data) {
+    public void updateDevicePosition(String data) {
         String[] chunks = data.split(" ");
         Device device = new Device(chunks[1], Float.parseFloat(chunks[2]), Float.parseFloat(chunks[3]));
 
@@ -258,17 +257,6 @@ public class MainActivity
         devicesFragment.updateDevicesList();
 
         consoleFragment.appendToConsole("Device " + device.getName() + " updated\n");
-    }
-
-    // DEBUGGING: Change to private later
-    public void iter() {
-        int listSize = mDeviceList.size();
-
-        for(int i = 0; i < listSize; i++) {
-            Device item = mDeviceList.get(i);
-            Log.d(TAG, "iter: Name: " + item.getName() + ", Lat: " + String.valueOf(item.getLatitude())
-                    + ", Lon: " + String.valueOf(item.getLongitude()));
-        }
     }
 
     private void removeIfContains(List<Device> list, Device item) {
@@ -469,7 +457,7 @@ public class MainActivity
         }
 
         if (data.startsWith("nRF24L01<")) {
-            updateDeviceLocation(data);
+            updateDevicePosition(data);
         }
     }
 }

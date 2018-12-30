@@ -16,6 +16,8 @@ import java.util.List;
 
 public class MapFragment extends Fragment {
     private WeakReference mActivity;
+    private View mapView;
+
     private Button btnRefresh;
 
     @Nullable
@@ -55,6 +57,7 @@ public class MapFragment extends Fragment {
     }
 
     private class UpdateTask extends AsyncTask<Integer, Integer, String> {
+        // private List<Device> coordinates;
         private List<Device> devicesList;
 
         @Override

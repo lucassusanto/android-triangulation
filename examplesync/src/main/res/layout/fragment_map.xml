@@ -21,14 +21,10 @@
             android:paddingBottom="16dp"
             android:textColor="@color/colorBlack"/>
 
-        <Button
-            android:id="@+id/btnRefresh"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Refresh"/>
     </LinearLayout>
 
     <com.felhr.serialportexamplesync.views.CustomView
+        android:id="@+id/cv_map"
         android:layout_width="match_parent"
         android:layout_height="300dp" />
 

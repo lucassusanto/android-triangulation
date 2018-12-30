@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CustomView extends View {
-    WeakReference m; // DEBUG
+    // WeakReference m; // DEBUG
 
     double topleftY, topleftX, bottomleftY, toprightX;
     // top left: -7.26707, 112.78335
@@ -80,7 +80,7 @@ public class CustomView extends View {
     }
 
     private void init(Context context, @Nullable AttributeSet set) {
-        m = new WeakReference(context); // DEBUG
+        // m = new WeakReference(context); // DEBUG
 
         // Set constants
         topleftY = -7.26707;
@@ -105,19 +105,17 @@ public class CustomView extends View {
         // Set References Position
         refList = new ArrayList<Device>();
 
-        refList.add(new Device("REF1", -7.28635, 112.79364));
-        refList.add(new Device("REF2", -7.28545, 112.79934));
-        refList.add(new Device("REF3", -7.28192, 112.79938));
-        refList.add(new Device("REF4", -7.27961, 112.79794));
+        refList.add(new Device("REF1", -7.274298, 112.789866));
+        refList.add(new Device("REF2", -7.274298, 112.804815));
+        refList.add(new Device("REF3", -7.286327, 112.789866));
+        refList.add(new Device("REF4", -7.286327, 112.804906));
 
         // Set My Position
-        myDevice = new Device("TRI1", -7.27961, 112.79794); // TC
+        // myDevice = new Device("TRI1", -7.27961, 112.79794); // TC
+        myDevice = new Device("null", 0.0, 0.0);
 
         // Set Devices Position
         devicesList = new ArrayList<Device>();
-
-        devicesList.add(new Device("TRI3", -7.28169, 112.79433)); // Rektorat
-        devicesList.add(new Device("TRI4", -7.27691, 112.79104)); // Graha
 
         /*
         Toast.makeText((Context) m.get(),
@@ -151,11 +149,11 @@ public class CustomView extends View {
 
     // Drawing Methods
 
-    private void drawPin(Canvas canvas, List<Device> deviceList, Paint paint) {
-        int len = deviceList.size();
+    private void drawPin(Canvas canvas, List<Device> devices, Paint paint) {
+        int len = devices.size();
 
         for(int i = 0; i < len; i++) {
-            Device tmp = deviceList.get(i);
+            Device tmp = devices.get(i);
             double cx, cy, r;
 
             cx = (tmp.getLongitude() - topleftX) * scaleX;
@@ -174,5 +172,17 @@ public class CustomView extends View {
         r = 10;
 
         canvas.drawCircle((float) cx, (float) cy, (float) r, mPaintMyDevice);
+    }
+
+    // Public Methods
+
+    public void updateMyPosition(Device device) {
+        myDevice = device;
+        postInvalidate();
+    }
+
+    public void updateDevicesPosition(List<Device> devices) {
+        devicesList = devices;
+        postInvalidate();
     }
 }

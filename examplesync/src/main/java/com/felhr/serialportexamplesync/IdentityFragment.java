@@ -101,8 +101,8 @@ public class IdentityFragment extends Fragment {
             m.updateDevicePosition("nRF24L01< TRI3 -7.285421 112.799283");
             m.updateDevicePosition("nRF24L01< TRI4 -7.282406 112.794129");
             m.updateDevicePosition("nRF24L01< TRI3 -7.285421 112.799284");
-            m.updateDevicePosition("nRF24L01< TRI3 -7.285421 112.799285");
-            m.updateDevicePosition("nRF24L01< TRI4 -7.282406 112.794130");
+            m.updateDevicePosition("nRF24L01< TRI3 -7.285591 112.79827");
+            m.updateDevicePosition("nRF24L01< TRI4 -7.285410 112.799311");
             }
         });
 
@@ -111,8 +111,8 @@ public class IdentityFragment extends Fragment {
             public void onClick(View v) {
             MainActivity m = (MainActivity) mActivity.get();
 
-            m.updateDevicePosition("nRF24L01< TRI3 1.1 2.2");
-            m.updateDevicePosition("nRF24L01< TRI4 1.1 2.2");
+            m.updateDevicePosition("nRF24L01< TRI3 -7.280578 112.792413");
+            m.updateDevicePosition("nRF24L01< TRI4 -7.282068 112.793818");
             }
         });
 

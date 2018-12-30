@@ -4,6 +4,10 @@
     tools:showIn="navigation_view">
 
     <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_console"
+            android:icon="@drawable/ic_console"
+            android:title="Console"/>
         <item android:id="@+id/nav_devices"
             android:icon="@drawable/ic_device"
             android:title="Devices"/>
@@ -13,10 +17,6 @@
         <item android:id="@+id/nav_identity"
             android:icon="@drawable/ic_identity"
             android:title="My Device"/>
-        <item
-            android:id="@+id/nav_console"
-            android:icon="@drawable/ic_console"
-            android:title="Console"/>
     </group>
 
 </menu>

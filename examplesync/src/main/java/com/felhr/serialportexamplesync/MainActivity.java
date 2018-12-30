@@ -248,19 +248,19 @@ public class MainActivity
         String[] chunks = data.split(" ");
         Device device = new Device(chunks[1], Float.parseFloat(chunks[2]), Float.parseFloat(chunks[3]));
 
-        // TODO: make multi-threading?
+        // TODO:
+        // use triangulation to draw object (mandatory)
+        // draw device object's name in a label
+        // rename devicesList into clientList
+        // make multi-threading
 
         removeIfContains(mDeviceList, device);
         mDeviceList.add(device);
 
-        mapFragment.updateMap();
+        mapFragment.updateDevicesPosition(mDeviceList);
         devicesFragment.updateDevicesList();
 
         consoleFragment.appendToConsole("Device " + device.getName() + " updated\n");
-
-        if(currentFragment == mapFragment) {
-            Toast.makeText(this,"Map is updated!", Toast.LENGTH_SHORT).show();
-        }
     }
 
     private void removeIfContains(List<Device> list, Device item) {
@@ -301,8 +301,10 @@ public class MainActivity
 
                         usbService.write(data.getBytes());
 
-                        consoleFragment.appendToConsole("> " + data + "\n");
+                        mapFragment.updateMyPosition(myIdentity);
                         identityFragment.updateMyPosition();
+
+                        consoleFragment.appendToConsole("> " + data + "\n");
                     }
                 }
             }

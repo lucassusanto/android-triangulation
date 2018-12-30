@@ -257,6 +257,10 @@ public class MainActivity
         devicesFragment.updateDevicesList();
 
         consoleFragment.appendToConsole("Device " + device.getName() + " updated\n");
+
+        if(currentFragment == mapFragment) {
+            Toast.makeText(this,"Map is updated!", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void removeIfContains(List<Device> list, Device item) {
@@ -290,14 +294,15 @@ public class MainActivity
                     if (usbService != null) {
                         myIdentity.setLatitude(location.getLatitude());
                         myIdentity.setLongitude(location.getLongitude());
-                        identityFragment.updateMyPosition();
 
                         String data = "SP " +
                                 String.valueOf(round(location.getLatitude(), 6)) + " " +
                                 String.valueOf(round(location.getLongitude(), 6)) + ";";
 
-                        consoleFragment.appendToConsole("> " + data + "\n");
                         usbService.write(data.getBytes());
+
+                        consoleFragment.appendToConsole("> " + data + "\n");
+                        identityFragment.updateMyPosition();
                     }
                 }
             }

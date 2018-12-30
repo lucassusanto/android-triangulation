@@ -9,9 +9,11 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.os.Build;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.widget.Toast;
 
 import com.felhr.serialportexamplesync.Device;
@@ -22,27 +24,41 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CustomView extends View {
-    // Variables
-
     WeakReference m; // DEBUG
+
+    double topleftY, topleftX, bottomleftY, toprightX;
+    // top left: -7.26707, 112.78335
+    // bottom left: -7.29456, 112.78328
+    // bottom right: -7.29466,112.81124
+    // top right: -7.26700, 112.81129
+    double scaleX, scaleY;
+
+    private Bitmap mImage;
+
+    private List<Device> refList, devicesList;
+    private Device myDevice;
+    private Paint mPaintRef, mPaintDevices, mPaintMyDevice;
 
     // Constructors
 
     public CustomView(Context context) {
         super(context);
-        init(context, null); // Is this line needed?
+        init(context, null);
     }
+
     public CustomView(Context context, AttributeSet attrs) {
         super(context, attrs);
-        init(context, attrs); // Is this line needed?
+        init(context, attrs);
     }
+
     public CustomView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        init(context, attrs); // Is this line needed?
+        init(context, attrs);
     }
+
     public CustomView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
-        init(context, attrs); // Is this line needed?
+        init(context, attrs);
     }
 
     // Methods
@@ -51,64 +67,64 @@ public class CustomView extends View {
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 
-        // Make view square
+        // Make view width same as view height
         int width = getMeasuredWidth();
         setMeasuredDimension(width, width);
 
-        // Set scale constants
+        // Set constants (BUG)
+        scaleY = width / (topleftY - bottomleftY);
+        scaleX = width / (toprightX - topleftX);
 
+        // Resize ITS Map
+        mImage = getResizedBitmap(mImage, width, width);
     }
 
     private void init(Context context, @Nullable AttributeSet set) {
         m = new WeakReference(context); // DEBUG
 
+        // Set constants
+        topleftY = -7.26707;
+        topleftX = 112.78335;
+
+        bottomleftY = -7.29456;
+        toprightX = 112.81129;
+
+        // Set Paints
+        mPaintRef = new Paint(Paint.ANTI_ALIAS_FLAG);
+        mPaintRef.setColor(Color.RED);
+
+        mPaintMyDevice = new Paint(Paint.ANTI_ALIAS_FLAG);
+        mPaintMyDevice.setColor(Color.GREEN);
+
+        mPaintDevices = new Paint(Paint.ANTI_ALIAS_FLAG);
+        mPaintDevices.setColor(Color.BLUE);
+
+        // Resize ITS map
+        mImage = BitmapFactory.decodeResource(getResources(), R.drawable.map_its_2);
+
+        // Set References Position
+        refList = new ArrayList<Device>();
+
+        refList.add(new Device("REF1", -7.28635, 112.79364));
+        refList.add(new Device("REF2", -7.28545, 112.79934));
+        refList.add(new Device("REF3", -7.28192, 112.79938));
+        refList.add(new Device("REF4", -7.27961, 112.79794));
+
+        // Set My Position
+        myDevice = new Device("TRI1", -7.27961, 112.79794); // TC
+
+        // Set Devices Position
+        devicesList = new ArrayList<Device>();
+
+        devicesList.add(new Device("TRI3", -7.28169, 112.79433)); // Rektorat
+        devicesList.add(new Device("TRI4", -7.27691, 112.79104)); // Graha
+
         /*
         Toast.makeText((Context) m.get(),
-            "width: " + String.valueOf(getWidth()) + ", height: " + String.valueOf(getHeight()),
+            "scale x: " + String.valueOf(scaleX) + ", scale y: " + String.valueOf(scaleY)+
+            ", cx: " + String.valueOf(cx) + ", cy: " + String.valueOf(cy),
             Toast.LENGTH_SHORT).show();
-
-        getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-            @Override
-            public void onGlobalLayout() {
-                if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-                    getViewTreeObserver().removeOnGlobalLayoutListener(this);
-                } else {
-                    getViewTreeObserver().removeGlobalOnLayoutListener(this);
-                }
-
-                mImage = getResizedBitmap(mImage, getWidth(), getHeight());
-            }
-        });
         */
-    }
-
-    @Override
-    protected void onDraw(Canvas canvas) {
-        super.onDraw(canvas);
-
-        // Draw ITS Map
-        Bitmap mImage;
-
-        mImage = BitmapFactory.decodeResource(getResources(), R.drawable.map_its_2);
-        mImage = getResizedBitmap(mImage, getWidth(), getHeight());
-
-        canvas.drawBitmap(mImage, 0, 0, null);
-
-        // Draw References Position
-        List<Device> list = new ArrayList<Device>();
-
-        list.add(new Device("REF1", ));
-        list.add(new Device("REF2", ));
-        list.add(new Device("REF3", ));
-        list.add(new Device("REF4", ));
-
-        drawReferencesPin(list);
-
-        // ---------------------------- DEBUGGING ----------------------------
-        // Draw My Device
-
-        // Draw Other Devices
-
     }
 
     private Bitmap getResizedBitmap(Bitmap bitmap, int reqWidth, int reqHeight) {
@@ -122,25 +138,41 @@ public class CustomView extends View {
         return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
     }
 
+    @Override
+    protected void onDraw(Canvas canvas) {
+        super.onDraw(canvas);
+
+        canvas.drawBitmap(mImage, 0, 0, null);
+
+        drawPin(canvas, refList, mPaintRef);
+        drawPin(canvas, devicesList, mPaintDevices);
+        drawMyPin(canvas);
+    }
+
     // Drawing Methods
 
-    private void drawReferencesPin(List<Device> referencesList) {
-        int len = referencesList.size();
+    private void drawPin(Canvas canvas, List<Device> deviceList, Paint paint) {
+        int len = deviceList.size();
 
         for(int i = 0; i < len; i++) {
+            Device tmp = deviceList.get(i);
+            double cx, cy, r;
 
+            cx = (tmp.getLongitude() - topleftX) * scaleX;
+            cy = (topleftY - tmp.getLatitude()) * scaleY;
+            r = 10;
+
+            canvas.drawCircle((float) cx, (float) cy, (float) r, paint);
         }
     }
 
-    public void drawMyPin(Device myDevice) {
+    private void drawMyPin(Canvas canvas) {
+        double cx, cy, r;
 
-    }
+        cx = (myDevice.getLongitude() - topleftX) * scaleX;
+        cy = (topleftY - myDevice.getLatitude()) * scaleY;
+        r = 10;
 
-    public void drawDevicesPin(List<Device> devicesList) {
-        int len = devicesList.size();
-
-        for(int i = 0; i < len; i++) {
-
-        }
+        canvas.drawCircle((float) cx, (float) cy, (float) r, mPaintMyDevice);
     }
 }

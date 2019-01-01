@@ -42,6 +42,12 @@ public class MainActivity
         IdentityFragment.OnIdentityMessageListener,
         ConsoleFragment.OnConsoleMessageListener {
 
+    // TODO:
+    // use triangulation to draw object (mandatory)
+    // draw device object's name in a label
+    // rename devicesList into clientList
+    // make multi-threading
+
     private static final String TAG = "MainActivity";
 
     // UI
@@ -247,16 +253,9 @@ public class MainActivity
      * TRIANGULATION SERVICE
      */
 
-    // DEBUGGING: Change to private later
     public void updateDevicePosition(String data) {
         String[] chunks = data.split(" ");
         Device device = new Device(chunks[1], Float.parseFloat(chunks[2]), Float.parseFloat(chunks[3]));
-
-        // TODO:
-        // use triangulation to draw object (mandatory)
-        // draw device object's name in a label
-        // rename devicesList into clientList
-        // make multi-threading
 
         removeIfContains(mDeviceList, device);
         mDeviceList.add(device);

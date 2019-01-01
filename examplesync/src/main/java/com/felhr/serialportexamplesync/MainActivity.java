@@ -65,6 +65,7 @@ public class MainActivity
     // USB Service
     private UsbService usbService;
     private MyHandler mHandler;
+    private boolean usbReady = false;
 
     // My Identity
     private Device myIdentity;
@@ -219,12 +220,14 @@ public class MainActivity
 
     @Override
     public void onDeviceNameChanged(String newName) {
-        String data = "SD " + newName + ";";
+        if(usbReady) {
+            myIdentity.setName(newName);
 
-        myIdentity.setName(newName);
-        usbService.write(data.getBytes());
+            String data = "SD " + newName + ";";
+            usbService.write(data.getBytes());
 
-        consoleFragment.appendToConsole("> " + data + "\n");
+            consoleFragment.appendToConsole("> " + data + "\n");
+        }
     }
 
     @Override
@@ -236,7 +239,7 @@ public class MainActivity
 
     @Override
     public void onNewCommandInvoked(String message) {
-        usbService.write(message.getBytes());
+        if(usbReady) usbService.write(message.getBytes());
     }
 
     /*
@@ -267,11 +270,12 @@ public class MainActivity
         String itemName = item.getName();
         int listSize = list.size();
 
-        for(int i = 0; i < listSize; i++)
-            if(list.get(i).getName().equals(itemName)) {
+        for(int i = 0; i < listSize; i++) {
+            if (list.get(i).getName().equals(itemName)) {
                 list.remove(i);
                 return;
             }
+        }
     }
 
     /*
@@ -289,27 +293,36 @@ public class MainActivity
         mLocationCallback = (new LocationCallback() {
             @Override
             public void onLocationResult(LocationResult locationResult) {
-            if (locationResult != null) {
-                for (Location location : locationResult.getLocations()) {
-                    if (usbService != null) {
+                if (locationResult != null) {
+                    for (Location location : locationResult.getLocations()) {
                         myIdentity.setLatitude(location.getLatitude());
                         myIdentity.setLongitude(location.getLongitude());
-
-                        String data = "SP " +
-                                String.valueOf(round(location.getLatitude(), 6)) + " " +
-                                String.valueOf(round(location.getLongitude(), 6)) + ";";
-
-                        usbService.write(data.getBytes());
 
                         mapFragment.updateMyPosition(myIdentity);
                         identityFragment.updateMyPosition();
 
-                        consoleFragment.appendToConsole("> " + data + "\n");
+                        writeMyLocationToSerial();
                     }
                 }
             }
-            }
         });
+    }
+
+    private void writeMyLocationToSerial() {
+        if (usbReady) {
+            double lat = myIdentity.getLatitude();
+            double lon = myIdentity.getLongitude();
+
+            if(lat == 0.0 && lon == 0.0) return;
+
+            String data = "SP " +
+                    String.valueOf(round(lat, 6)) + " " +
+                    String.valueOf(round(lon, 6)) + ";";
+
+            usbService.write(data.getBytes());
+
+            consoleFragment.appendToConsole("> " + data + "\n");
+        }
     }
 
     private void startLocationUpdates() {
@@ -347,6 +360,7 @@ public class MainActivity
         @Override
         public void onServiceDisconnected(ComponentName arg0) {
             usbService = null;
+            usbReady = false;
         }
     };
 
@@ -384,23 +398,33 @@ public class MainActivity
     private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-        switch (intent.getAction()) {
-            case UsbService.ACTION_USB_PERMISSION_GRANTED: // USB PERMISSION GRANTED
-                consoleFragment.appendToConsole("USB Ready\n");
-                break;
-            case UsbService.ACTION_USB_PERMISSION_NOT_GRANTED: // USB PERMISSION NOT GRANTED
-                consoleFragment.appendToConsole("USB Permission not granted\n");
-                break;
-            case UsbService.ACTION_NO_USB: // NO USB CONNECTED
-                consoleFragment.appendToConsole("No USB connected\n");
-                break;
-            case UsbService.ACTION_USB_DISCONNECTED: // USB DISCONNECTED
-                consoleFragment.appendToConsole("USB disconnected\n");
-                break;
-            case UsbService.ACTION_USB_NOT_SUPPORTED: // USB NOT SUPPORTED
-                consoleFragment.appendToConsole("USB device not supported\n");
-                break;
-        }
+            switch (intent.getAction()) {
+                case UsbService.ACTION_USB_PERMISSION_GRANTED:
+                    consoleFragment.appendToConsole("USB Ready\n");
+                    usbReady = true;
+                    writeMyLocationToSerial();
+                    break;
+
+                case UsbService.ACTION_USB_PERMISSION_NOT_GRANTED:
+                    consoleFragment.appendToConsole("USB Permission not granted\n");
+                    usbReady = false;
+                    break;
+
+                case UsbService.ACTION_NO_USB:
+                    consoleFragment.appendToConsole("No USB connected\n");
+                    usbReady = false;
+                    break;
+
+                case UsbService.ACTION_USB_DISCONNECTED:
+                    consoleFragment.appendToConsole("USB disconnected\n");
+                    usbReady = false;
+                    break;
+
+                case UsbService.ACTION_USB_NOT_SUPPORTED:
+                    consoleFragment.appendToConsole("USB device not supported\n");
+                    usbReady = false;
+                    break;
+            }
         }
     };
 

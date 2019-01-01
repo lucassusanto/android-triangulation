@@ -27,7 +27,6 @@ public class IdentityFragment extends Fragment {
     private Button btnChangeVerbose;
     private Button btnRefresh;
 
-    // MainActivity <- ConsoleFragment
     OnIdentityMessageListener identityMessageListener;
 
     public interface OnIdentityMessageListener {
@@ -89,7 +88,7 @@ public class IdentityFragment extends Fragment {
             }
         });
 
-        // DEBUGGING
+        // DEBUG
         Button btnInsertDev = view.findViewById(R.id.btnID);
         Button btnInsertDev2 = view.findViewById(R.id.btnID2);
 

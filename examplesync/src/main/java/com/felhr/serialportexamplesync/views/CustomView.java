@@ -24,6 +24,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CustomView extends View {
+    // TODO: draw device object's name in a label
+
     // WeakReference m; // DEBUG
 
     double topleftY, topleftX, bottomleftY, toprightX;
@@ -71,7 +73,7 @@ public class CustomView extends View {
         int width = getMeasuredWidth();
         setMeasuredDimension(width, width);
 
-        // Set constants (BUG)
+        // Set constants
         scaleY = width / (topleftY - bottomleftY);
         scaleX = width / (toprightX - topleftX);
 

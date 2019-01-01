@@ -42,12 +42,6 @@ public class MainActivity
         IdentityFragment.OnIdentityMessageListener,
         ConsoleFragment.OnConsoleMessageListener {
 
-    // TODO:
-    // use triangulation to draw object (mandatory)
-    // draw device object's name in a label
-    // rename devicesList into clientList
-    // make multi-threading
-
     private static final String TAG = "MainActivity";
 
     // UI
@@ -60,7 +54,7 @@ public class MainActivity
     private Fragment currentFragment;
 
     // Triangulation
-    public List<Device> mDeviceList;
+    public List<Device> mClientList;
     public DeviceListAdapter devAdapter;
 
     // Location
@@ -78,7 +72,7 @@ public class MainActivity
 
     // Verbose Levels
     // 0: None; 1: OK, ERR; 2: NRF SEND; 3: NRF RECV
-    private int verbose;
+    private int verbose = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -109,17 +103,14 @@ public class MainActivity
         }
 
         // Triangulation
-        mDeviceList = new ArrayList<>();
-        devAdapter = new DeviceListAdapter(this, mDeviceList);
+        mClientList = new ArrayList<>();
+        devAdapter = new DeviceListAdapter(this, mClientList);
         myIdentity = new Device("TRI1", 0.0, 0.0);
 
         // Location Service
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
         initLocationRequest(10000, 3000);
         setLocationCallBack();
-
-        // Verbose Level
-        verbose = 1;
     }
 
     private void initFragments() {
@@ -257,10 +248,10 @@ public class MainActivity
         String[] chunks = data.split(" ");
         Device device = new Device(chunks[1], Float.parseFloat(chunks[2]), Float.parseFloat(chunks[3]));
 
-        removeIfContains(mDeviceList, device);
-        mDeviceList.add(device);
+        removeIfContains(mClientList, device);
+        mClientList.add(device);
 
-        mapFragment.updateDevicesPosition(mDeviceList);
+        mapFragment.updateDevicesPosition(mClientList);
         devicesFragment.updateDevicesList();
 
         consoleFragment.appendToConsole("Device " + device.getName() + " updated\n");

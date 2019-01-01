@@ -85,7 +85,7 @@ public class IdentityFragment extends Fragment {
             txVerbose.setText(String.valueOf(m.getVerbose()));
             IdentityFragment.this.updateMyPosition();
 
-            Toast.makeText(m, "All value was refreshed", Toast.LENGTH_SHORT).show();
+            Toast.makeText(m, "All value has been refreshed", Toast.LENGTH_SHORT).show();
             }
         });
 

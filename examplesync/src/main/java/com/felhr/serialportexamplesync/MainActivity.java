@@ -185,6 +185,7 @@ public class MainActivity
         setFilters();
         startService(UsbService.class, usbConnection, null);
 
+        writeMyLocationToSerial();
         startLocationUpdates();
     }
 

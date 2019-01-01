@@ -9,11 +9,11 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
-        android:text="My Device"
-        android:textSize="24sp"
-        android:textAlignment="center"
         android:paddingBottom="16dp"
-        android:textColor="@color/colorBlack"/>
+        android:text="My Device"
+        android:textAlignment="center"
+        android:textColor="@color/colorBlack"
+        android:textSize="24sp" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -23,53 +23,104 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Device Name:"
-            android:textSize="16dp"/>
+            android:textSize="16dp" />
 
         <EditText
             android:id="@+id/txMyName"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="TRI1"/>
+            android:text="TRI1" />
 
         <Button
-            android:id="@+id/btnChange"
+            android:id="@+id/btnChangeDevName"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Change"/>
+            android:text="Change" />
     </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingTop="8dp">
+        android:paddingTop="4dp">
+
         <TextView
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Latitude: "/>
+            android:text="Latitude:     " />
+
         <TextView
             android:id="@+id/txMyLat"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="3"
-            android:text="-"/>
+            android:text="-" />
     </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingTop="8dp">
+
         <TextView
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Longitude: "/>
+            android:text="Longitude:  " />
+
         <TextView
             android:id="@+id/txMyLon"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="3"
-            android:text="-"/>
+            android:text="-" />
     </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Verbose Level (0-3): " />
+
+        <EditText
+            android:id="@+id/txVerbose"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="1" />
+
+        <Button
+            android:id="@+id/btnChangeVerbose"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Change" />
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/btnRefresh"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Refresh All" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <Button
+            android:id="@+id/btnID"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="D: Insert 1" />
+
+        <Button
+            android:id="@+id/btnID2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="D: Insert 2" />
+    </LinearLayout>
+
 </LinearLayout>

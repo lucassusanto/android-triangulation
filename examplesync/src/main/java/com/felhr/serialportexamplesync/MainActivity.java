@@ -1,7 +1,6 @@
 package com.felhr.serialportexamplesync;
 
 import android.Manifest;
-import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -24,10 +23,6 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -41,15 +36,32 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-public class MainActivity extends AppCompatActivity implements
-        NavigationView.OnNavigationItemSelectedListener {
+public class MainActivity
+        extends AppCompatActivity
+        implements NavigationView.OnNavigationItemSelectedListener,
+        IdentityFragment.OnIdentityMessageListener,
+        ConsoleFragment.OnConsoleMessageListener {
+
+    // TODO:
+    // use triangulation to draw object (mandatory)
+    // draw device object's name in a label
+    // rename devicesList into clientList
+    // make multi-threading
+
+    private static final String TAG = "MainActivity";
 
     // UI
     private DrawerLayout drawer;
-    private Fragment devicesFragment;
-    private Fragment mapFragment;
-    private Fragment identityFragment;
-    private Fragment consoleFragment;
+
+    private DevicesFragment devicesFragment;
+    private MapFragment mapFragment;
+    private IdentityFragment identityFragment;
+    private ConsoleFragment consoleFragment;
+    private Fragment currentFragment;
+
+    // Triangulation
+    public List<Device> mDeviceList;
+    public DeviceListAdapter devAdapter;
 
     // Location
     private FusedLocationProviderClient mFusedLocationClient;
@@ -59,6 +71,10 @@ public class MainActivity extends AppCompatActivity implements
     // USB Service
     private UsbService usbService;
     private MyHandler mHandler;
+    private boolean usbReady = false;
+
+    // My Identity
+    private Device myIdentity;
 
     // Verbose Levels
     // 0: None; 1: OK, ERR; 2: NRF SEND; 3: NRF RECV
@@ -73,6 +89,7 @@ public class MainActivity extends AppCompatActivity implements
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        mHandler = new MyHandler(this);
         drawer = findViewById(R.id.drawer_layout);
 
         NavigationView navigationView = findViewById(R.id.nav_view);
@@ -83,15 +100,18 @@ public class MainActivity extends AppCompatActivity implements
         drawer.addDrawerListener(toogle);
         toogle.syncState();
 
-        devicesFragment = new DevicesFragment();
-        mapFragment = new MapFragment();
-        identityFragment = new IdentityFragment();
-        consoleFragment = new ConsoleFragment();
+        // Fragments
+        initFragments();
 
         if(savedInstanceState == null) {
             replaceFragment(consoleFragment);
             navigationView.setCheckedItem(R.id.nav_console);
         }
+
+        // Triangulation
+        mDeviceList = new ArrayList<>();
+        devAdapter = new DeviceListAdapter(this, mDeviceList);
+        myIdentity = new Device("TRI1", 0.0, 0.0);
 
         // Location Service
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
@@ -102,8 +122,37 @@ public class MainActivity extends AppCompatActivity implements
         verbose = 1;
     }
 
+    private void initFragments() {
+        devicesFragment = new DevicesFragment();
+        mapFragment = new MapFragment();
+        identityFragment = new IdentityFragment();
+        consoleFragment = new ConsoleFragment();
+
+        android.support.v4.app.FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+
+        ft.add(R.id.fragment_container, devicesFragment);
+        ft.add(R.id.fragment_container, mapFragment);
+        ft.add(R.id.fragment_container, identityFragment);
+        ft.add(R.id.fragment_container, consoleFragment);
+
+        ft.hide(devicesFragment);
+        ft.hide(mapFragment);
+        ft.hide(identityFragment);
+        ft.hide(consoleFragment);
+
+        ft.commit();
+
+        currentFragment = consoleFragment;
+    }
+
     private void replaceFragment(Fragment fragment) {
-        getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, fragment).commit();
+        android.support.v4.app.FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+
+        ft.hide(currentFragment);
+        ft.show(fragment);
+        ft.commit();
+
+        currentFragment = fragment;
     }
 
     @Override
@@ -142,6 +191,7 @@ public class MainActivity extends AppCompatActivity implements
         setFilters();
         startService(UsbService.class, usbConnection, null);
 
+        writeMyLocationToSerial();
         startLocationUpdates();
     }
 
@@ -154,38 +204,84 @@ public class MainActivity extends AppCompatActivity implements
         stopLocationUpdates();
     }
 
+    // Device Identity Methods
+
+    public String getMyName() {
+        return myIdentity.getName();
+    }
+    public double getMyLat() {
+        return myIdentity.getLatitude();
+    }
+    public double getMyLon() {
+        return myIdentity.getLongitude();
+    }
+    public int getVerbose() {
+        return verbose;
+    }
+
+    /*
+     * FRAGMENTS CALLBACK
+     */
+
+    // Identity Fragment
+
+    @Override
+    public void onDeviceNameChanged(String newName) {
+        if(usbReady) {
+            myIdentity.setName(newName);
+
+            String data = "SD " + newName + ";";
+            usbService.write(data.getBytes());
+
+            consoleFragment.appendToConsole("> " + data + "\n");
+        }
+    }
+
+    @Override
+    public void onVerboseLevelChanged(int level) {
+        verbose = level;
+    }
+
+    // Console Fragment
+
+    @Override
+    public void onNewCommandInvoked(String message) {
+        if(usbReady) usbService.write(message.getBytes());
+    }
+
     /*
      * TRIANGULATION SERVICE
      */
-    class DeviceInfo {
-        String name;
-        float latitude;
-        float longitude;
-    }
 
-    // private List<DeviceInfo> nodeList = new ArrayList<DeviceInfo>();
-
-    private void updateDeviceLocation(String data) {
+    public void updateDevicePosition(String data) {
         String[] chunks = data.split(" ");
+        Device device = new Device(chunks[1], Float.parseFloat(chunks[2]), Float.parseFloat(chunks[3]));
 
-        DeviceInfo deviceInfo = new DeviceInfo();
-        deviceInfo.name = chunks[1];
-        deviceInfo.latitude = Float.parseFloat(chunks[2]);
-        deviceInfo.longitude = Float.parseFloat(chunks[3]);
+        removeIfContains(mDeviceList, device);
+        mDeviceList.add(device);
 
-        drawDeviceOnMap(deviceInfo);
+        mapFragment.updateDevicesPosition(mDeviceList);
+        devicesFragment.updateDevicesList();
 
-        display.append("Device " + deviceInfo.name + " updated\n");
-        logd
+        consoleFragment.appendToConsole("Device " + device.getName() + " updated\n");
     }
 
-    private void drawDeviceOnMap(DeviceInfo deviceInfo) {
+    private void removeIfContains(List<Device> list, Device item) {
+        String itemName = item.getName();
+        int listSize = list.size();
 
+        for(int i = 0; i < listSize; i++) {
+            if (list.get(i).getName().equals(itemName)) {
+                list.remove(i);
+                return;
+            }
+        }
     }
 
     /*
      * LOCATION SERVICE
      */
+
     private void initLocationRequest(long interval, long fastestInterval) {
         mLocationRequest = new LocationRequest();
         mLocationRequest.setInterval(interval);
@@ -199,18 +295,34 @@ public class MainActivity extends AppCompatActivity implements
             public void onLocationResult(LocationResult locationResult) {
                 if (locationResult != null) {
                     for (Location location : locationResult.getLocations()) {
-                        if (usbService != null) {
-                            String data = "SP " +
-                                    String.valueOf(round(location.getLatitude(), 6)) + " " +
-                                    String.valueOf(round(location.getLongitude(), 6)) + ";";
-                            display.append("> " + data + "\n");
+                        myIdentity.setLatitude(location.getLatitude());
+                        myIdentity.setLongitude(location.getLongitude());
 
-                            usbService.write(data.getBytes());
-                        }
+                        mapFragment.updateMyPosition(myIdentity);
+                        identityFragment.updateMyPosition();
+
+                        writeMyLocationToSerial();
                     }
                 }
             }
         });
+    }
+
+    private void writeMyLocationToSerial() {
+        if (usbReady) {
+            double lat = myIdentity.getLatitude();
+            double lon = myIdentity.getLongitude();
+
+            if(lat == 0.0 && lon == 0.0) return;
+
+            String data = "SP " +
+                    String.valueOf(round(lat, 6)) + " " +
+                    String.valueOf(round(lon, 6)) + ";";
+
+            usbService.write(data.getBytes());
+
+            consoleFragment.appendToConsole("> " + data + "\n");
+        }
     }
 
     private void startLocationUpdates() {
@@ -237,6 +349,7 @@ public class MainActivity extends AppCompatActivity implements
     /*
      * USB SERIAL DRIVER
      */
+
     private final ServiceConnection usbConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName arg0, IBinder arg1) {
@@ -247,6 +360,7 @@ public class MainActivity extends AppCompatActivity implements
         @Override
         public void onServiceDisconnected(ComponentName arg0) {
             usbService = null;
+            usbReady = false;
         }
     };
 
@@ -268,11 +382,13 @@ public class MainActivity extends AppCompatActivity implements
 
     private void setFilters() {
         IntentFilter filter = new IntentFilter();
+
         filter.addAction(UsbService.ACTION_USB_PERMISSION_GRANTED);
         filter.addAction(UsbService.ACTION_NO_USB);
         filter.addAction(UsbService.ACTION_USB_DISCONNECTED);
         filter.addAction(UsbService.ACTION_USB_NOT_SUPPORTED);
         filter.addAction(UsbService.ACTION_USB_PERMISSION_NOT_GRANTED);
+
         registerReceiver(mUsbReceiver, filter);
     }
 
@@ -283,20 +399,30 @@ public class MainActivity extends AppCompatActivity implements
         @Override
         public void onReceive(Context context, Intent intent) {
             switch (intent.getAction()) {
-                case UsbService.ACTION_USB_PERMISSION_GRANTED: // USB PERMISSION GRANTED
-                    display.append("USB Ready\n");
+                case UsbService.ACTION_USB_PERMISSION_GRANTED:
+                    consoleFragment.appendToConsole("USB Ready\n");
+                    usbReady = true;
+                    writeMyLocationToSerial();
                     break;
-                case UsbService.ACTION_USB_PERMISSION_NOT_GRANTED: // USB PERMISSION NOT GRANTED
-                    display.append("USB Permission not granted\n");
+
+                case UsbService.ACTION_USB_PERMISSION_NOT_GRANTED:
+                    consoleFragment.appendToConsole("USB Permission not granted\n");
+                    usbReady = false;
                     break;
-                case UsbService.ACTION_NO_USB: // NO USB CONNECTED
-                    display.append("No USB connected\n");
+
+                case UsbService.ACTION_NO_USB:
+                    consoleFragment.appendToConsole("No USB connected\n");
+                    usbReady = false;
                     break;
-                case UsbService.ACTION_USB_DISCONNECTED: // USB DISCONNECTED
-                    display.append("USB disconnected\n");
+
+                case UsbService.ACTION_USB_DISCONNECTED:
+                    consoleFragment.appendToConsole("USB disconnected\n");
+                    usbReady = false;
                     break;
-                case UsbService.ACTION_USB_NOT_SUPPORTED: // USB NOT SUPPORTED
-                    display.append("USB device not supported\n");
+
+                case UsbService.ACTION_USB_NOT_SUPPORTED:
+                    consoleFragment.appendToConsole("USB device not supported\n");
+                    usbReady = false;
                     break;
             }
         }
@@ -352,17 +478,17 @@ public class MainActivity extends AppCompatActivity implements
 
     private void handleVerbose(String data) {
         if (verbose > 0 && (data.startsWith("OK") || data.startsWith("ERR"))) {
-            display.append(data + "\n");
+            consoleFragment.appendToConsole(data + "\n");
         }
         else if (verbose > 1 && data.startsWith("nRF24L01>")) {
-            display.append(data + "\n");
+            consoleFragment.appendToConsole(data + "\n");
         }
         else if (verbose > 2 && data.startsWith("nRF24L01<")) {
-            display.append(data + "\n");
+            consoleFragment.appendToConsole(data + "\n");
         }
 
         if (data.startsWith("nRF24L01<")) {
-            updateDeviceLocation(data);
+            updateDevicePosition(data);
         }
     }
 }

@@ -22,7 +22,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Device Name:"
+            android:text="Device Name (max 3 chars):"
             android:textSize="16dp" />
 
         <EditText
@@ -30,7 +30,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="TRI1" />
+            android:text="D1" />
 
         <Button
             android:id="@+id/btnChangeDevName"
@@ -105,22 +105,5 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:text="Refresh All" />
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-
-        <Button
-            android:id="@+id/btnID"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="D: Insert 1" />
-
-        <Button
-            android:id="@+id/btnID2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="D: Insert 2" />
-    </LinearLayout>
 
 </LinearLayout>

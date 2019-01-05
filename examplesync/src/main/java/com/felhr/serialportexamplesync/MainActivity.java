@@ -39,14 +39,9 @@ import java.util.Set;
 public class MainActivity
         extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
-        IdentityFragment.OnIdentityMessageListener,
-        ConsoleFragment.OnConsoleMessageListener {
-
-    // TODO:
-    // use triangulation to draw object (mandatory)
-    // draw device object's name in a label
-    // rename devicesList into clientList
-    // make multi-threading
+        ConsoleFragment.OnConsoleMessageListener,
+        DevicesFragment.OnDevicesMessageListener,
+        IdentityFragment.OnIdentityMessageListener {
 
     private static final String TAG = "MainActivity";
 
@@ -60,7 +55,7 @@ public class MainActivity
     private Fragment currentFragment;
 
     // Triangulation
-    public List<Device> mDeviceList;
+    public List<Device> mClientList;
     public DeviceListAdapter devAdapter;
 
     // Location
@@ -78,7 +73,7 @@ public class MainActivity
 
     // Verbose Levels
     // 0: None; 1: OK, ERR; 2: NRF SEND; 3: NRF RECV
-    private int verbose;
+    private int verbose = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -109,17 +104,14 @@ public class MainActivity
         }
 
         // Triangulation
-        mDeviceList = new ArrayList<>();
-        devAdapter = new DeviceListAdapter(this, mDeviceList);
-        myIdentity = new Device("TRI1", 0.0, 0.0);
+        mClientList = new ArrayList<>();
+        devAdapter = new DeviceListAdapter(this, mClientList);
+        myIdentity = new Device("D1", 0.0, 0.0);
 
         // Location Service
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
         initLocationRequest(10000, 3000);
         setLocationCallBack();
-
-        // Verbose Level
-        verbose = 1;
     }
 
     private void initFragments() {
@@ -191,7 +183,9 @@ public class MainActivity
         setFilters();
         startService(UsbService.class, usbConnection, null);
 
+        writeMyDeviceNameToSerial();
         writeMyLocationToSerial();
+
         startLocationUpdates();
     }
 
@@ -219,22 +213,49 @@ public class MainActivity
         return verbose;
     }
 
+    private void writeMyDeviceNameToSerial() {
+        if(usbReady) {
+            String data = "SD " + myIdentity.getName() + ";";
+
+            usbService.write(data.getBytes());
+            consoleFragment.appendToConsole("> " + data + "\n");
+        }
+    }
+
+    private void writeMyLocationToSerial() {
+        if (usbReady) {
+            double lat = myIdentity.getLatitude();
+            double lon = myIdentity.getLongitude();
+
+            if(lat == 0.0 && lon == 0.0) return;
+
+            String data = "SP " +
+                    String.valueOf(round(lat, 6)) + " " +
+                    String.valueOf(round(lon, 6)) + ";";
+
+            usbService.write(data.getBytes());
+            consoleFragment.appendToConsole("> " + data + "\n");
+        }
+    }
+
     /*
      * FRAGMENTS CALLBACK
      */
+
+    // Device Fragment
+
+    @Override
+    public void onClearDevicesInvoked() {
+        mClientList.clear();
+        mapFragment.updateDevicesPosition(mClientList);
+    }
 
     // Identity Fragment
 
     @Override
     public void onDeviceNameChanged(String newName) {
-        if(usbReady) {
-            myIdentity.setName(newName);
-
-            String data = "SD " + newName + ";";
-            usbService.write(data.getBytes());
-
-            consoleFragment.appendToConsole("> " + data + "\n");
-        }
+        myIdentity.setName(newName);
+        writeMyDeviceNameToSerial();
     }
 
     @Override
@@ -257,10 +278,10 @@ public class MainActivity
         String[] chunks = data.split(" ");
         Device device = new Device(chunks[1], Float.parseFloat(chunks[2]), Float.parseFloat(chunks[3]));
 
-        removeIfContains(mDeviceList, device);
-        mDeviceList.add(device);
+        removeIfContains(mClientList, device);
+        mClientList.add(device);
 
-        mapFragment.updateDevicesPosition(mDeviceList);
+        mapFragment.updateDevicesPosition(mClientList);
         devicesFragment.updateDevicesList();
 
         consoleFragment.appendToConsole("Device " + device.getName() + " updated\n");
@@ -306,23 +327,6 @@ public class MainActivity
                 }
             }
         });
-    }
-
-    private void writeMyLocationToSerial() {
-        if (usbReady) {
-            double lat = myIdentity.getLatitude();
-            double lon = myIdentity.getLongitude();
-
-            if(lat == 0.0 && lon == 0.0) return;
-
-            String data = "SP " +
-                    String.valueOf(round(lat, 6)) + " " +
-                    String.valueOf(round(lon, 6)) + ";";
-
-            usbService.write(data.getBytes());
-
-            consoleFragment.appendToConsole("> " + data + "\n");
-        }
     }
 
     private void startLocationUpdates() {
@@ -402,6 +406,8 @@ public class MainActivity
                 case UsbService.ACTION_USB_PERMISSION_GRANTED:
                     consoleFragment.appendToConsole("USB Ready\n");
                     usbReady = true;
+
+                    writeMyDeviceNameToSerial();
                     writeMyLocationToSerial();
                     break;
 

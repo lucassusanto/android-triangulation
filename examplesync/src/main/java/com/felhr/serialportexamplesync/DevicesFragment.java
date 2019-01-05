@@ -1,5 +1,6 @@
 package com.felhr.serialportexamplesync;
 
+import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -17,7 +18,13 @@ public class DevicesFragment extends Fragment {
     private WeakReference mActivity;
 
     private ListView lvDevice;
-    private Button btnRefresh;
+    private Button btnClear;
+
+    OnDevicesMessageListener devicesMessageListener;
+
+    public interface OnDevicesMessageListener {
+        public void onClearDevicesInvoked();
+    }
 
     @Nullable
     @Override
@@ -25,13 +32,13 @@ public class DevicesFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_devices, container, false);
 
         lvDevice = view.findViewById(R.id.lv_devices);
-        btnRefresh = view.findViewById(R.id.btnRefresh);
+        btnClear = view.findViewById(R.id.btnClear);
 
-        btnRefresh.setOnClickListener(new View.OnClickListener() {
+        btnClear.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                DevicesFragment.this.updateDevicesList();
-                Toast.makeText((MainActivity) mActivity.get(), "Device list was updated!", Toast.LENGTH_SHORT).show();
+                devicesMessageListener.onClearDevicesInvoked();
+                Toast.makeText((MainActivity) mActivity.get(), "Devices were cleared!", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -41,7 +48,16 @@ public class DevicesFragment extends Fragment {
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
+        Activity activity = (Activity) context;
+
         mActivity = new WeakReference(context);
+
+        try {
+            devicesMessageListener = (OnDevicesMessageListener) activity;
+        }
+        catch(ClassCastException e) {
+            throw new ClassCastException(activity.toString() + " must override onClearDevicesInvoked");
+        }
     }
 
     @Override

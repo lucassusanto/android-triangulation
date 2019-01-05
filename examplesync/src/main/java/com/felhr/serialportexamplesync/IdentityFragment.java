@@ -27,7 +27,6 @@ public class IdentityFragment extends Fragment {
     private Button btnChangeVerbose;
     private Button btnRefresh;
 
-    // MainActivity <- ConsoleFragment
     OnIdentityMessageListener identityMessageListener;
 
     public interface OnIdentityMessageListener {
@@ -55,12 +54,12 @@ public class IdentityFragment extends Fragment {
             MainActivity m = (MainActivity) mActivity.get();
             String newName = txMyName.getText().toString();
 
-            if(!newName.equals("")) {
+            if(!newName.equals("") && newName.length() < 4) {
                 identityMessageListener.onDeviceNameChanged(newName);
-                Toast.makeText(m, "Device name change was requested", Toast.LENGTH_SHORT).show();
+                Toast.makeText(m, "Device name was changed!", Toast.LENGTH_SHORT).show();
             }
             else {
-                Toast.makeText(m, "Device name cannot be empty!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(m, "Device name is not valid!", Toast.LENGTH_SHORT).show();
             }
             }
         });
@@ -86,33 +85,6 @@ public class IdentityFragment extends Fragment {
             IdentityFragment.this.updateMyPosition();
 
             Toast.makeText(m, "All value has been refreshed", Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        // DEBUGGING
-        Button btnInsertDev = view.findViewById(R.id.btnID);
-        Button btnInsertDev2 = view.findViewById(R.id.btnID2);
-
-        btnInsertDev.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-            MainActivity m = (MainActivity) mActivity.get();
-
-            m.updateDevicePosition("nRF24L01< TRI3 -7.285421 112.799283");
-            m.updateDevicePosition("nRF24L01< TRI4 -7.282406 112.794129");
-            m.updateDevicePosition("nRF24L01< TRI3 -7.285421 112.799284");
-            m.updateDevicePosition("nRF24L01< TRI3 -7.285591 112.79827");
-            m.updateDevicePosition("nRF24L01< TRI4 -7.285410 112.799311");
-            }
-        });
-
-        btnInsertDev2.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-            MainActivity m = (MainActivity) mActivity.get();
-
-            m.updateDevicePosition("nRF24L01< TRI3 -7.280578 112.792413");
-            m.updateDevicePosition("nRF24L01< TRI4 -7.282068 112.793818");
             }
         });
 

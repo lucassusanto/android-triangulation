@@ -26,18 +26,22 @@ import java.util.List;
 public class CustomView extends View {
     // WeakReference m; // DEBUG
 
+    // Scaling Variables
     double topleftY, topleftX, bottomleftY, toprightX;
-    // top left: -7.26707, 112.78335
-    // bottom left: -7.29456, 112.78328
-    // bottom right: -7.29466,112.81124
-    // top right: -7.26700, 112.81129
     double scaleX, scaleY;
 
-    private Bitmap mImage;
+    // top right: -7.26700, 112.81129
+    // bottom right: -7.29466,112.81124
+    // bottom left: -7.29456, 112.78328
+    // top left: -7.26707, 112.78335
 
+    // Drawing Variables
+    private Bitmap mImage;
+    private Paint mPaintRef, mPaintDevices, mPaintMyDevice;
+
+    // Devices Variables
     private List<Device> refList, devicesList;
     private Device myDevice;
-    private Paint mPaintRef, mPaintDevices, mPaintMyDevice;
 
     // Constructors
 
@@ -61,33 +65,8 @@ public class CustomView extends View {
         init(context, attrs);
     }
 
-    // Methods
-
-    @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-
-        // Make view width same as view height
-        int width = getMeasuredWidth();
-        setMeasuredDimension(width, width);
-
-        // Set constants (BUG)
-        scaleY = width / (topleftY - bottomleftY);
-        scaleX = width / (toprightX - topleftX);
-
-        // Resize ITS Map
-        mImage = getResizedBitmap(mImage, width, width);
-    }
-
     private void init(Context context, @Nullable AttributeSet set) {
         // m = new WeakReference(context); // DEBUG
-
-        // Set constants
-        topleftY = -7.26707;
-        topleftX = 112.78335;
-
-        bottomleftY = -7.29456;
-        toprightX = 112.81129;
 
         // Set Paints
         mPaintRef = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -99,30 +78,49 @@ public class CustomView extends View {
         mPaintDevices = new Paint(Paint.ANTI_ALIAS_FLAG);
         mPaintDevices.setColor(Color.BLUE);
 
-        // Resize ITS map
-        mImage = BitmapFactory.decodeResource(getResources(), R.drawable.map_its_2);
-
         // Set References Position
         refList = new ArrayList<Device>();
 
-        refList.add(new Device("REF1", -7.274298, 112.789866));
-        refList.add(new Device("REF2", -7.274298, 112.804815));
-        refList.add(new Device("REF3", -7.286327, 112.789866));
-        refList.add(new Device("REF4", -7.286327, 112.804906));
+        refList.add(new Device("REF1", -7.275435, 112.798698));
+        refList.add(new Device("REF2", -7.281127, 112.791019));
+        refList.add(new Device("REF3", -7.283580, 112.798641));
 
         // Set My Position
-        // myDevice = new Device("TRI1", -7.27961, 112.79794); // TC
         myDevice = new Device("null", 0.0, 0.0);
 
         // Set Devices Position
         devicesList = new ArrayList<Device>();
 
+        // DEBUG
         /*
         Toast.makeText((Context) m.get(),
             "scale x: " + String.valueOf(scaleX) + ", scale y: " + String.valueOf(scaleY)+
             ", cx: " + String.valueOf(cx) + ", cy: " + String.valueOf(cy),
             Toast.LENGTH_SHORT).show();
         */
+    }
+
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+
+        // Make view width same as view height
+        int width = getMeasuredWidth();
+        setMeasuredDimension(width, width);
+
+        // Set scaling
+        topleftY = -7.26707;
+        topleftX = 112.78335;
+
+        bottomleftY = -7.29456;
+        toprightX = 112.81129;
+
+        scaleY = width / (topleftY - bottomleftY);
+        scaleX = width / (toprightX - topleftX);
+
+        // Set map
+        mImage = BitmapFactory.decodeResource(getResources(), R.drawable.map_its_2);
+        mImage = getResizedBitmap(mImage, width, width);
     }
 
     private Bitmap getResizedBitmap(Bitmap bitmap, int reqWidth, int reqHeight) {
@@ -142,36 +140,30 @@ public class CustomView extends View {
 
         canvas.drawBitmap(mImage, 0, 0, null);
 
-        drawPin(canvas, refList, mPaintRef);
-        drawPin(canvas, devicesList, mPaintDevices);
-        drawMyPin(canvas);
+        drawPins(canvas, refList, mPaintRef);
+        drawPins(canvas, devicesList, mPaintDevices);
+        drawPin(canvas, myDevice.getLongitude(), myDevice.getLatitude(), mPaintMyDevice);
     }
 
     // Drawing Methods
 
-    private void drawPin(Canvas canvas, List<Device> devices, Paint paint) {
+    private void drawPins(Canvas canvas, List<Device> devices, Paint paint) {
         int len = devices.size();
 
         for(int i = 0; i < len; i++) {
             Device tmp = devices.get(i);
-            double cx, cy, r;
-
-            cx = (tmp.getLongitude() - topleftX) * scaleX;
-            cy = (topleftY - tmp.getLatitude()) * scaleY;
-            r = 10;
-
-            canvas.drawCircle((float) cx, (float) cy, (float) r, paint);
+            drawPin(canvas, tmp.getLongitude(), tmp.getLatitude(), paint);
         }
     }
 
-    private void drawMyPin(Canvas canvas) {
+    private void drawPin(Canvas canvas, double longitude, double latitude, Paint paint) {
         double cx, cy, r;
 
-        cx = (myDevice.getLongitude() - topleftX) * scaleX;
-        cy = (topleftY - myDevice.getLatitude()) * scaleY;
+        cx = (longitude - topleftX) * scaleX;
+        cy = (topleftY - latitude) * scaleY;
         r = 10;
 
-        canvas.drawCircle((float) cx, (float) cy, (float) r, mPaintMyDevice);
+        canvas.drawCircle((float) cx, (float) cy, (float) r, paint);
     }
 
     // Public Methods

@@ -8,7 +8,7 @@ char buffExternal[32]; // External INPUT
 // Radio
 RF24 radio(7, 8); // CE, CSN
 const byte address[6] = "00001";
-int broadcastDelay = 2000, currentDelay = 0;
+int broadcastDelay = 3000, currentDelay = 0;
 
 // My Device Info
 char myDevice[4] = "D1\0";

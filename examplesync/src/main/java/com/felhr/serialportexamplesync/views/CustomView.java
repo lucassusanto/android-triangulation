@@ -107,10 +107,9 @@ public class CustomView extends View {
         // Set References Position
         refList = new ArrayList<Device>();
 
-        refList.add(new Device("REF1", -7.274298, 112.789866));
-        refList.add(new Device("REF2", -7.274298, 112.804815));
-        refList.add(new Device("REF3", -7.286327, 112.789866));
-        refList.add(new Device("REF4", -7.286327, 112.804906));
+        refList.add(new Device("REF1", -7.275435, 112.798698));
+        refList.add(new Device("REF2", -7.281127, 112.791019));
+        refList.add(new Device("REF3", -7.283580, 112.798641));
 
         // Set My Position
         // myDevice = new Device("TRI1", -7.27961, 112.79794); // TC

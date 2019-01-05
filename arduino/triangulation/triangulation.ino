@@ -8,12 +8,10 @@ char buffExternal[32]; // External INPUT
 // Radio
 RF24 radio(7, 8); // CE, CSN
 const byte address[6] = "00001";
-
-// Delay between each broadcast. To avoid broadcast collision
 int broadcastDelay = 2000, currentDelay = 0;
 
 // My Device Info
-char myDevice[5] = "TRI1\0";
+char myDevice[4] = "D1\0";
 float myLatitude = 0, myLongitude = 0;
 
 void setup() {
@@ -29,9 +27,6 @@ void setup() {
   
   radio.powerUp();  
   radio.startListening();
-
-  randomSeed(analogRead(0));
-  broadcastDelay += random(0, 20);
 }
 
 void loop() {
@@ -67,6 +62,7 @@ void getInputs() {
       }
     }
   }
+  
   // Get External Inputs
   else if (radio.available()) {    
     while (radio.available()) radio.read(&buffExternal, sizeof(buffExternal));
@@ -80,22 +76,10 @@ void processInternalInput() {
     sscanf(buff + 3, "%s", myDevice);    
     Serial.println("OK");
   }
-
-  // Set Broadcast Delay
-  else if(strncmp(buff, "SBD", 3) == 0) {
-    char tmp[3];
-    sscanf(buff + 4, "%s", tmp);
-    
-    int bd = String(tmp).toInt();
-    
-    // Min 2 seconds
-    if(bd < 2) {
-      Serial.println("ERR");
-    }
-    
-    broadcastDelay = bd * 1000 + random(0, 20);
-
-    Serial.println("OK");
+  
+  // Get Device Name
+  else if(strncmp(buff, "GD", 2) == 0) {
+    Serial.println(myDevice);
   }
   
   // Set Position
@@ -124,29 +108,31 @@ void processInternalInput() {
   }
 }
 
-void processExternalInput() {
-  // Get position data from other devices
+// Get position data from other devices
+void processExternalInput() {  
   if(strncmp(buffExternal, "TRI", 3) == 0) {
-    char exDevice[4], exLatitude[12], exLongitude[12];
-    sscanf(buffExternal, "%s %s %s", exDevice, exLatitude, exLongitude);
+    char fDevice[4], fLatitude[12], fLongitude[12];
+    
+    sscanf(buffExternal + 4, "%s %s %s", fDevice, fLatitude, fLongitude);
     
     Serial.print("nRF24L01< ");
-    Serial.print(exDevice);
+    Serial.print(fDevice);
     Serial.print(" ");
-    Serial.print(exLatitude);
+    Serial.print(fLatitude);
     Serial.print(" ");
-    Serial.println(exLongitude);
+    Serial.println(fLongitude);
   }
 }
 
+// Send position data to other devices
 void broadcastMyPosition() {
   if(myLatitude == 0 && myLongitude == 0) return;
   
   char myInfo[32];
-  sprintf(myInfo, "%s %s %s", myDevice, String(myLatitude, 6).c_str(), String(myLongitude, 6).c_str());
+  sprintf(myInfo, "TRI %s %s %s\0", myDevice, String(myLatitude, 6).c_str(), String(myLongitude, 6).c_str());
 
   radio.write(&myInfo, sizeof(myInfo));
 
   Serial.print("nRF24L01> ");
-  Serial.println(myInfo);
+  Serial.println(myInfo + 4);
 }

@@ -8,12 +8,12 @@
             android:id="@+id/nav_console"
             android:icon="@drawable/ic_console"
             android:title="Console"/>
-        <item android:id="@+id/nav_devices"
-            android:icon="@drawable/ic_device"
-            android:title="Devices"/>
         <item android:id="@+id/nav_map"
             android:icon="@drawable/ic_map"
             android:title="Map"/>
+        <item android:id="@+id/nav_devices"
+            android:icon="@drawable/ic_device"
+            android:title="Devices"/>
         <item android:id="@+id/nav_identity"
             android:icon="@drawable/ic_identity"
             android:title="My Device"/>

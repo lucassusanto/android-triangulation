@@ -39,8 +39,9 @@ import java.util.Set;
 public class MainActivity
         extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
-        IdentityFragment.OnIdentityMessageListener,
-        ConsoleFragment.OnConsoleMessageListener {
+        ConsoleFragment.OnConsoleMessageListener,
+        DevicesFragment.OnDevicesMessageListener,
+        IdentityFragment.OnIdentityMessageListener {
 
     private static final String TAG = "MainActivity";
 
@@ -105,7 +106,7 @@ public class MainActivity
         // Triangulation
         mClientList = new ArrayList<>();
         devAdapter = new DeviceListAdapter(this, mClientList);
-        myIdentity = new Device("TRI1", 0.0, 0.0);
+        myIdentity = new Device("D1", 0.0, 0.0);
 
         // Location Service
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
@@ -213,6 +214,14 @@ public class MainActivity
     /*
      * FRAGMENTS CALLBACK
      */
+
+    // Device Fragment
+
+    @Override
+    public void onClearDevicesInvoked() {
+        mClientList.clear();
+        mapFragment.updateDevicesPosition(mClientList);
+    }
 
     // Identity Fragment
 

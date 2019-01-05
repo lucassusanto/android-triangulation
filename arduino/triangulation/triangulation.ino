@@ -82,7 +82,7 @@ void processInternalInput() {
     Serial.println(myDevice);
   }
   
-  // Set Position
+  // Set Latitude and Longitude
   else if(strncmp(buff, "SP", 2) == 0) {
     String lat, lon;
     char blat[13], blon[13];

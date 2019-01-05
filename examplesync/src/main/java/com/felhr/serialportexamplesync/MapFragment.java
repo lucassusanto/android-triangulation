@@ -27,6 +27,14 @@ public class MapFragment extends Fragment {
 
         mapView = view.findViewById(R.id.cv_map);
 
+//        Button btnDebug = view.findViewById(R.id.btnDebug);
+//        btnDebug.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                debugCal();
+//            }
+//        });
+
         return view;
     }
 
@@ -46,4 +54,10 @@ public class MapFragment extends Fragment {
         mapView.updateDevicesPosition(devices);
         Toast.makeText((MainActivity) mActivity.get(), "Map is updated!", Toast.LENGTH_SHORT).show();
     }
+
+    // DEBUG
+//    public void debugCal() {
+//        Device device = new Device("tes", -7.281674, 112.794281);
+//        mapView.updateDevicePosition(device);
+//    }
 }

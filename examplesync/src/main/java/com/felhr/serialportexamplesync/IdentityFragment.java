@@ -56,7 +56,7 @@ public class IdentityFragment extends Fragment {
 
             if(!newName.equals("") && newName.length() < 4) {
                 identityMessageListener.onDeviceNameChanged(newName);
-                Toast.makeText(m, "Device name change was requested", Toast.LENGTH_SHORT).show();
+                Toast.makeText(m, "Device name was changed!", Toast.LENGTH_SHORT).show();
             }
             else {
                 Toast.makeText(m, "Device name is not valid!", Toast.LENGTH_SHORT).show();

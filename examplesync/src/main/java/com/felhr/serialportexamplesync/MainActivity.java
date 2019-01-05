@@ -183,7 +183,9 @@ public class MainActivity
         setFilters();
         startService(UsbService.class, usbConnection, null);
 
+        writeMyDeviceNameToSerial();
         writeMyLocationToSerial();
+
         startLocationUpdates();
     }
 
@@ -211,6 +213,31 @@ public class MainActivity
         return verbose;
     }
 
+    private void writeMyDeviceNameToSerial() {
+        if(usbReady) {
+            String data = "SD " + myIdentity.getName() + ";";
+
+            usbService.write(data.getBytes());
+            consoleFragment.appendToConsole("> " + data + "\n");
+        }
+    }
+
+    private void writeMyLocationToSerial() {
+        if (usbReady) {
+            double lat = myIdentity.getLatitude();
+            double lon = myIdentity.getLongitude();
+
+            if(lat == 0.0 && lon == 0.0) return;
+
+            String data = "SP " +
+                    String.valueOf(round(lat, 6)) + " " +
+                    String.valueOf(round(lon, 6)) + ";";
+
+            usbService.write(data.getBytes());
+            consoleFragment.appendToConsole("> " + data + "\n");
+        }
+    }
+
     /*
      * FRAGMENTS CALLBACK
      */
@@ -227,14 +254,8 @@ public class MainActivity
 
     @Override
     public void onDeviceNameChanged(String newName) {
-        if(usbReady) {
-            myIdentity.setName(newName);
-
-            String data = "SD " + newName + ";";
-            usbService.write(data.getBytes());
-
-            consoleFragment.appendToConsole("> " + data + "\n");
-        }
+        myIdentity.setName(newName);
+        writeMyDeviceNameToSerial();
     }
 
     @Override
@@ -306,23 +327,6 @@ public class MainActivity
                 }
             }
         });
-    }
-
-    private void writeMyLocationToSerial() {
-        if (usbReady) {
-            double lat = myIdentity.getLatitude();
-            double lon = myIdentity.getLongitude();
-
-            if(lat == 0.0 && lon == 0.0) return;
-
-            String data = "SP " +
-                    String.valueOf(round(lat, 6)) + " " +
-                    String.valueOf(round(lon, 6)) + ";";
-
-            usbService.write(data.getBytes());
-
-            consoleFragment.appendToConsole("> " + data + "\n");
-        }
     }
 
     private void startLocationUpdates() {
@@ -402,6 +406,8 @@ public class MainActivity
                 case UsbService.ACTION_USB_PERMISSION_GRANTED:
                     consoleFragment.appendToConsole("USB Ready\n");
                     usbReady = true;
+
+                    writeMyDeviceNameToSerial();
                     writeMyLocationToSerial();
                     break;
 

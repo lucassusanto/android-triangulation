@@ -267,7 +267,7 @@ public class MainActivity
 
     @Override
     public void onNewCommandInvoked(String message) {
-        if(usbReady) usbService.write(message.getBytes());
+        if(usbService != null) usbService.write(message.getBytes());
     }
 
     /*

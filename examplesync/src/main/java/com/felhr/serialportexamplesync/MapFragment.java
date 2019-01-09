@@ -17,23 +17,13 @@ import java.lang.ref.WeakReference;
 import java.util.List;
 
 public class MapFragment extends Fragment {
-    private WeakReference mActivity;
     private CustomView mapView;
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_map, container, false);
-
         mapView = view.findViewById(R.id.cv_map);
-
-//        Button btnDebug = view.findViewById(R.id.btnDebug);
-//        btnDebug.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                debugCal();
-//            }
-//        });
 
         return view;
     }
@@ -41,7 +31,6 @@ public class MapFragment extends Fragment {
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
-        mActivity = new WeakReference(context);
     }
 
     // Update Map Section
@@ -52,12 +41,5 @@ public class MapFragment extends Fragment {
 
     public void updateDevicesPosition(List<Device> devices) {
         mapView.updateDevicesPosition(devices);
-        Toast.makeText((MainActivity) mActivity.get(), "Map is updated!", Toast.LENGTH_SHORT).show();
     }
-
-    // DEBUG
-//    public void debugCal() {
-//        Device device = new Device("tes", -7.281674, 112.794281);
-//        mapView.updateDevicePosition(device);
-//    }
 }

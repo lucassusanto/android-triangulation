@@ -93,7 +93,7 @@ void getDeviceName() {
 }
 
 void setDeviceName() {
-sscanf(internalBuff + 3, "%s", deviceName);    
+  sscanf(internalBuff + 3, "%s", deviceName);    
   Serial.println("OK");
 }
 

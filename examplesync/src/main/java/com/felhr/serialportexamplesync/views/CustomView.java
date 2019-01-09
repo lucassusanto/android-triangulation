@@ -11,6 +11,7 @@ import android.graphics.RectF;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.View;
+import android.widget.Toast;
 
 import com.felhr.serialportexamplesync.Device;
 import com.felhr.serialportexamplesync.R;
@@ -22,6 +23,8 @@ import java.util.List;
 import static java.math.BigDecimal.ROUND_HALF_UP;
 
 public class CustomView extends View {
+    private WeakReference mActivity;
+
     // Scaling Variables
     double topleftY, topleftX, bottomleftY, toprightX;
     double scaleX, scaleY;
@@ -38,6 +41,9 @@ public class CustomView extends View {
     // Devices Variables
     private List<Device> refList, devicesList;
     private Device myDevice;
+
+    // Debug
+    private boolean debug = false;
 
     // Constructors
 
@@ -62,6 +68,8 @@ public class CustomView extends View {
     }
 
     private void init(Context context, @Nullable AttributeSet set) {
+        mActivity = new WeakReference(context);
+
         // Set Paints
         mPaintRef = new Paint(Paint.ANTI_ALIAS_FLAG);
         mPaintRef.setColor(Color.RED);
@@ -155,11 +163,15 @@ public class CustomView extends View {
 
         Point point = getTruePoint(points, refList.get(2).getLongitude(), refList.get(2).getLatitude(), dist[2]);
 
-        // Return
-        device.setLatitude(point.y);
-        device.setLongitude(point.x);
+        if(debug) {
+            double errorDist = distanceInMeter(device.getLongitude(), device.getLatitude(),
+                    point.x, point.y);
 
-        return device;
+            Toast.makeText((Context) mActivity.get(), device.getName() + " Position Error: " + String.valueOf(errorDist) +
+                    " meter", Toast.LENGTH_SHORT).show();
+        }
+
+        return new Device(device.getName(), point.y, point.x);
     }
 
     // Distance between (x, y) to all reference points
@@ -254,6 +266,24 @@ public class CustomView extends View {
         }
 
         return points[1];
+    }
+
+    // Distance between (x1, y1) and (x2, y2) in meter
+    private double distanceInMeter(double x1, double y1, double x2, double y2) {
+        double R = 6378.137;
+        double dLat = y2 * Math.PI / 180 - y1 * Math.PI / 180;
+        double dLon = x2 * Math.PI / 180 - x1 * Math.PI / 180;
+        double a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(y1 * Math.PI / 180) * Math.cos(y2 * Math.PI / 180) *
+                        Math.sin(dLon/2) * Math.sin(dLon/2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        double d = R * c;
+        return d * 1000; // centi meters
+    }
+
+    private double round(double val, int decimals) {
+        double div = Math.pow(10, decimals);
+        return Math.round(val * div) / div;
     }
 
     // Drawing Methods

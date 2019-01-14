@@ -96,6 +96,10 @@ public class CustomView extends View {
         refList.add(new Device("REF1", -7.274922, 112.800401));
         refList.add(new Device("REF2", -7.283147, 112.790550));
         refList.add(new Device("REF3", -7.286468, 112.804709));
+
+//        refList.add(new Device("REF1", -7.270531, 112.798625));
+//        refList.add(new Device("REF2", -7.281869, 112.785770));
+//        refList.add(new Device("REF3", -7.291566, 112.804818));
     }
 
     @Override

@@ -1,6 +1,6 @@
 #include <SPI.h>
-#include <nRF24L01.h>
-#include <RF24.h>
+#include <nRF24L01_m.h>
+#include <RF24_m.h>
 
 // Internal & External Input
 char internalBuff[32], pos = 0, internalInputFlag = 0;

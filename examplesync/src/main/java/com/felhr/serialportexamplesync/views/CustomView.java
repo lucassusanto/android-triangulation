@@ -20,25 +20,19 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 
-import static java.math.BigDecimal.ROUND_HALF_UP;
-
 public class CustomView extends View {
     private WeakReference mActivity;
 
-    // Scaling Variables
     // top right: -7.26700, 112.81129
-    // bottom right: -7.29466,112.81124
+    // bottom right: -7.29466, 112.81124
     // bottom left: -7.29456, 112.78328
     // top left: -7.26707, 112.78335
 
+    // Scaling Variables
     private double topleftY, topleftX, bottomleftY, toprightX;
     private double scaleX, scaleY;
 
-    // Revisi
-    private List<Point> refPoints;
-    private List<Point> refPixels;
-    private Point myDevice2;
-
+    // Revisi: Scaling Variables
     private double mapLenInPixel, mapLenInMeter;
 
     // Drawing Variables
@@ -48,6 +42,10 @@ public class CustomView extends View {
     // Devices Variables
     private List<Device> refList, devicesList;
     private Device myDevice;
+
+    // Revisi: Devices Variables
+    private List<Point> refPoints, refPixels, devicesList2;
+    private Point myDevice2;
 
     // Constructors
 
@@ -87,11 +85,17 @@ public class CustomView extends View {
         // Set References Position
         initReferences();
 
+        // Init Variable
+        devicesList = new ArrayList<Device>();
+
+        // Revisi: Init Variable
+        devicesList2 = new ArrayList<Point>();
+
         // Set My Position
         myDevice = new Device("null", 0.0, 0.0);
 
-        // Set Devices Position
-        devicesList = new ArrayList<Device>();
+        // Revisi: My Position
+        myDevice2 = new Point(-1, -1);
     }
 
     private void initReferences() {
@@ -101,21 +105,19 @@ public class CustomView extends View {
         refList.add(new Device("REF2", -7.283147, 112.790550));
         refList.add(new Device("REF3", -7.286468, 112.804709));
 
-        // Revisi
-
-        // Ref Points
+        // Revisi: Ref Points
         refPoints = new ArrayList<Point>();
 
-        refPoints.add(new Point(112.800401, -7.274922));
-        refPoints.add(new Point(112.790550, -7.283147));
-        refPoints.add(new Point(112.804709, -7.286468));
+        refPoints.add(new Point(112.800401, -7.274922));    // <- Edit this
+        refPoints.add(new Point(112.790550, -7.283147));    // <- Edit this
+        refPoints.add(new Point(112.804709, -7.286468));    // <- Edit this
 
-        // Ref Pixels
+        // Revisi: Ref Pixels
         refPixels = new ArrayList<Point>();
 
-        refPixels.add(new Point(160, 50));
-        refPixels.add(new Point(60, 100));
-        refPixels.add(new Point(190, 190));
+        refPixels.add(new Point(439.39, 205.65));   // <- Edit this
+        refPixels.add(new Point(185.54, 421.07));   // <- Edit this
+        refPixels.add(new Point(550.41, 508.05));   // <- Edit this
     }
 
     @Override
@@ -126,7 +128,7 @@ public class CustomView extends View {
         int width = getMeasuredWidth();
         setMeasuredDimension(width, width);
 
-        // Set scaling
+        // Set Scaling
         topleftY = -7.26707;
         topleftX = 112.78335;
 
@@ -136,20 +138,16 @@ public class CustomView extends View {
         scaleY = width / (topleftY - bottomleftY);
         scaleX = width / (toprightX - topleftX);
 
-        // Set map
+        // Revisi: Scaling
+        mapLenInMeter = 3085.3; // <- Edit this value in meters
+        mapLenInPixel = width;
+
+        // Set Map
         mImage = BitmapFactory.decodeResource(getResources(), R.drawable.map_its_2);
         mImage = getResizedBitmap(mImage, width, width);
 
-        // Revisi
-        mapLenInPixel = width;
-        mapLenInMeter = 2000.0; // Meters
-
-        // Revisi
-        myDevice2 = getTriangulatedPosition(new Point(112.797578, -7.279922));
-
-//        Toast.makeText((Context) mActivity.get(),
-//                "x: " + String.valueOf(myDevice2.x) + "\ny: " + String.valueOf(myDevice2.y),
-//                Toast.LENGTH_LONG).show();
+        // Revisi: My Position
+        myDevice2 = getTriangulatedPosition(new Point(112.797578, -7.279922)); // TC
     }
 
     private Bitmap getResizedBitmap(Bitmap bitmap, int reqWidth, int reqHeight) {
@@ -168,13 +166,14 @@ public class CustomView extends View {
         super.onDraw(canvas);
         canvas.drawBitmap(mImage, 0, 0, null);
 
-        drawPins(canvas, refList, mPaintRef);
-        drawPins(canvas, devicesList, mPaintDevices);
-        drawPin(canvas, myDevice.getLongitude(), myDevice.getLatitude(), mPaintMyDevice);
+//        drawPins(canvas, refList, mPaintRef);
+//        drawPins(canvas, devicesList, mPaintDevices);
+//        drawPin(canvas, myDevice.getLongitude(), myDevice.getLatitude(), mPaintMyDevice);
 
         // Revisi
 
         drawPins2(canvas, refPixels, mPaintRef);
+        drawPins2(canvas, devicesList2, mPaintDevices);
         drawPin2(canvas, myDevice2, mPaintMyDevice);
     }
 
@@ -199,6 +198,10 @@ public class CustomView extends View {
         );
 
         return getTruePoint(points, refPixels.get(2), dist[2]);
+    }
+
+    private Point getTriangulatedPosition(Device device) {
+        return getTriangulatedPosition(new Point(device.getLongitude(), device.getLatitude()));
     }
 
     private double[] getDistances(Point point) {
@@ -316,7 +319,7 @@ public class CustomView extends View {
         canvas.drawCircle((float) cx, (float) cy, (float) r, paint);
     }
 
-    // Revisi
+    // Revisi: Drawing Methods
     
     private void drawPins2(Canvas canvas, List<Point> points, Paint paint) {
         int len = points.size();
@@ -340,12 +343,12 @@ public class CustomView extends View {
     private Point distanceToPixel(Point point) {
         // Convert to meter
         double
-            x = point.x * 110.57,
-            y = point.y * 111.32;
+            x = point.x * 110570,
+            y = point.y * 111320;
         
         // Convert to pixel
-        x = x * mapLenInPixel / mapLenInMeter * 1000;
-        y = y * mapLenInPixel / mapLenInMeter * 1000;
+        x = x * mapLenInPixel / mapLenInMeter;
+        y = y * mapLenInPixel / mapLenInMeter;
         
         return new Point(x, y);
     }
@@ -357,7 +360,7 @@ public class CustomView extends View {
     // Public Methods
 
     public void updateMyPosition(Device device) {
-        // myDevice = getTriangulatedPosition(device);
+        myDevice2 = getTriangulatedPosition(device);
         postInvalidate();
     }
 
@@ -366,7 +369,7 @@ public class CustomView extends View {
 
         devicesList.clear();
         for(int i = 0; i < nLen; i++) {
-            // devicesList.add(getTriangulatedPosition(devices.get(i)));
+             devicesList2.add(getTriangulatedPosition(devices.get(i)));
         }
 
         postInvalidate();

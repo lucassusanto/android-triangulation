@@ -26,13 +26,21 @@ public class CustomView extends View {
     private WeakReference mActivity;
 
     // Scaling Variables
-    double topleftY, topleftX, bottomleftY, toprightX;
-    double scaleX, scaleY;
-
     // top right: -7.26700, 112.81129
     // bottom right: -7.29466,112.81124
     // bottom left: -7.29456, 112.78328
     // top left: -7.26707, 112.78335
+
+    private double topleftY, topleftX, bottomleftY, toprightX;
+    private double scaleX, scaleY;
+
+    // Revisi
+    private List<Point> refPoints;
+    private List<Point> refPixels;
+    
+    private double mapLenInPixel, mapLenInMeter;
+
+    private Point myDevice2;
 
     // Drawing Variables
     private Bitmap mImage;
@@ -91,15 +99,19 @@ public class CustomView extends View {
     }
 
     private void initReferences() {
-        refList = new ArrayList<Device>();
+        // Ref Points
+        refPoints = new ArrayList<Point>();
 
-        refList.add(new Device("REF1", -7.274922, 112.800401));
-        refList.add(new Device("REF2", -7.283147, 112.790550));
-        refList.add(new Device("REF3", -7.286468, 112.804709));
+        refPoints.add(new Point(112.800401, -7.274922));
+        refPoints.add(new Point(112.790550, -7.283147));
+        refPoints.add(new Point(112.804709, -7.286468));
 
-//        refList.add(new Device("REF1", -7.270531, 112.798625));
-//        refList.add(new Device("REF2", -7.281869, 112.785770));
-//        refList.add(new Device("REF3", -7.291566, 112.804818));
+        // Ref Pixels
+        refPixels = new ArrayList<Point>();
+
+        refPixels.add(new Point(160, 50));
+        refPixels.add(new Point(60, 100));
+        refPixels.add(new Point(190, 190));
     }
 
     @Override
@@ -110,15 +122,27 @@ public class CustomView extends View {
         int width = getMeasuredWidth();
         setMeasuredDimension(width, width);
 
+        // Revisi
+        mapLenInPixel = width;
+        mapLenInMeter = 2000.0; // Meters
+
+        // Revisi
+        myDevice2 = getTriangulatedPosition(new Point(112.797578, -7.279922));
+        // myDevice2.y = -myDevice2.y;
+
+//        Toast.makeText((Context) mActivity.get(),
+//                "x: " + String.valueOf(myDevice2.x) + "\ny: " + String.valueOf(myDevice2.y),
+//                Toast.LENGTH_LONG).show();
+
         // Set scaling
-        topleftY = -7.26707;
-        topleftX = 112.78335;
-
-        bottomleftY = -7.29456;
-        toprightX = 112.81129;
-
-        scaleY = width / (topleftY - bottomleftY);
-        scaleX = width / (toprightX - topleftX);
+//        topleftY = -7.26707;
+//        topleftX = 112.78335;
+//
+//        bottomleftY = -7.29456;
+//        toprightX = 112.81129;
+//
+//        scaleY = width / (topleftY - bottomleftY);
+//        scaleX = width / (toprightX - topleftX);
 
         // Set map
         mImage = BitmapFactory.decodeResource(getResources(), R.drawable.map_its_2);
@@ -139,11 +163,14 @@ public class CustomView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        canvas.drawBitmap(mImage, 0, 0, null);
+         canvas.drawBitmap(mImage, 0, 0, null);
+        drawPins2(canvas, refPixels, mPaintRef);
 
-        drawPins(canvas, refList, mPaintRef);
-        drawPins(canvas, devicesList, mPaintDevices);
-        drawPin(canvas, myDevice.getLongitude(), myDevice.getLatitude(), mPaintMyDevice);
+        drawPin2(canvas, myDevice2, mPaintMyDevice);
+
+//        drawPins(canvas, refList, mPaintRef);
+//        drawPins(canvas, devicesList, mPaintDevices);
+//        drawPin(canvas, myDevice.getLongitude(), myDevice.getLatitude(), mPaintMyDevice);
     }
 
     // Triangulation
@@ -158,52 +185,51 @@ public class CustomView extends View {
     }
 
     // Main Calculation
-    private Device getTriangulatedPosition(Device device) {
-        double[] dist = getDistances(device.getLongitude(), device.getLatitude());
+    private Point getTriangulatedPosition(Point point) {
+        double[] dist = getDistances(point);
+
+//        Toast.makeText((Context) mActivity.get(),
+//                "dist1: " + String.valueOf(dist[0]) +
+//                    "\ndist2: " + String.valueOf(dist[1]) +
+//                  "\ndist3: " + String.valueOf(dist[2]),
+//                Toast.LENGTH_LONG).show();
 
         Point[] points = getIntersectionPoints(
-                refList.get(0).getLongitude(), refList.get(0).getLatitude(),dist[0],
-                refList.get(1).getLongitude(), refList.get(1).getLatitude(),dist[1]);
+            refPixels.get(0), dist[0],
+            refPixels.get(1), dist[1]
+        );
 
-        Point point = getTruePoint(points, refList.get(2).getLongitude(), refList.get(2).getLatitude(), dist[2]);
-
-        if(debug) {
-            double errorDist = distanceInMeter(device.getLongitude(), device.getLatitude(),
-                    point.x, point.y);
-
-            Toast.makeText((Context) mActivity.get(), device.getName() + " Position Error: " + String.valueOf(errorDist) +
-                    " meter", Toast.LENGTH_SHORT).show();
-        }
-
-        return new Device(device.getName(), point.y, point.x);
+        return getTruePoint(points, refPixels.get(2), dist[2]);
     }
 
-    // Distance between (x, y) to all reference points
-    private double[] getDistances(double x, double y) {
+    private double[] getDistances(Point point) {
         double[] dist = new double[3];
 
-        dist[0] = distance(x, y, refList.get(0).getLongitude(), refList.get(0).getLatitude());
-        dist[1] = distance(x, y, refList.get(1).getLongitude(), refList.get(1).getLatitude());
-        dist[2] = distance(x, y, refList.get(2).getLongitude(), refList.get(2).getLatitude());
+        dist[0] = squashDistance(distanceToPixel(distance(point, refPoints.get(0))));
+        dist[1] = squashDistance(distanceToPixel(distance(point, refPoints.get(1))));
+        dist[2] = squashDistance(distanceToPixel(distance(point, refPoints.get(2))));
 
         return dist;
     }
 
-    // Distance between (x1, y1) and (x2, y2)
-    private double distance(double x1, double y1, double x2, double y2) {
+    private Point[] getIntersectionPoints(Point equation1, double r1,
+                                          Point equation2, double r2) {
         double
-            dX = (x2 - x1),
-            dY = (y2 - y1);
+            x1 = equation1.x, y1 = equation1.y,
+            x2 = equation2.x, y2 = equation2.y;
 
-        double
-            result = Math.sqrt(((dX * dX) + (dY * dY)));
+        double scl = 100;
 
-        return result;
-    }
+        // compress
+//        x1 /= scl; y1 /= scl;
+//        x2 /= scl; y2 /= scl;
+//        r1 /= scl; r2 /= scl;
 
-    // Intersection Points between (x1, y1, r1) and (x2, y2, r2) circles
-    private Point[] getIntersectionPoints(double x1, double y1, double r1,
-                                        double x2, double y2, double r2) {
+//        Toast.makeText((Context) mActivity.get(),
+//            "x1: " + String.valueOf(x1) + ", y1: " + String.valueOf(y1)+ ", r1: " + String.valueOf(r1)+
+//                "\nx2: " + String.valueOf(x2) + ", y2: " + String.valueOf(y2)+ ", r2: " + String.valueOf(r2),
+//            Toast.LENGTH_LONG).show();
+
         double
             a = x1 * x1 - x2 * x2 - r1 * r1 + r2 * r2 + y1 * y1 - y2 * y2,
             b = 2 * (x1 - x2),
@@ -225,6 +251,15 @@ public class CustomView extends View {
             o = f + g - e,
             p = Math.sqrt(m - 4 * d * n);
 
+
+//        Toast.makeText((Context) mActivity.get(),
+//                "m: " + String.valueOf(m) +
+//                        "\nd: " + String.valueOf(d)+
+//                        "\nn: " + String.valueOf(n)+
+//                        "\ndd: " + String.valueOf(dd),
+//                Toast.LENGTH_LONG).show();
+
+
         double
             y_1 = dd * (o + p),
             x_1 = calcX(y_1, x1, x2, y1, y2, r1, r2),
@@ -232,43 +267,50 @@ public class CustomView extends View {
             y_2 = dd * (o - p),
             x_2 = calcX(y_2, x1, x2, y1, y2, r1, r2);
 
+        // decompress
+//        x_1 *= scl; y_1 *= scl;
+//        x_2 *= scl; y_2 *= scl;
+
+//        Toast.makeText((Context) mActivity.get(),
+//                "x1: " + String.valueOf(x_1) +
+//                        "\ny1: " + String.valueOf(y_1)+
+//                        "\nx2: " + String.valueOf(x_2)+
+//                        "\ny2: " + String.valueOf(y_2),
+//                Toast.LENGTH_LONG).show();
+
+
         Point[] points = new Point[2];
 
         points[0] = new Point(x_1, y_1);
         points[1] = new Point(x_2, y_2);
 
+
+
         return points;
     }
 
-    // Get x position from y
     private double calcX(double y, double x1, double x2, double y1, double y2, double r1, double r2) {
-        double result = (- r1 * r1 + r2 * r2 + x1 * x1 - x2 * x2 - 2 * y * y1 + 2 * y * y2 + y1 * y1 - y2 * y2)
-                / (2*(x1 - x2));
-        return result;
+        return (- r1 * r1 + r2 * r2 + x1 * x1 - x2 * x2 - 2 * y * y1 + 2 * y * y2 + y1 * y1 - y2 * y2) / (2*(x1 - x2));
     }
 
-    // Get Right Point between 2 Intersection Points
-    private Point getTruePoint(Point[] points, double x, double y, double r) {
+    private Point getTruePoint(Point[] points, Point equation3, double r3) {
         double
             x1 = points[0].x, y1 = points[0].y,
             x2 = points[1].x, y2 = points[1].y;
 
         double
-            dX1 = (x1 - x), dY1 = (y1 - y),
-            dX2 = (x2 - x), dY2 = (y2 - y);
+            dX1 = (x1 - equation3.x), dY1 = (y1 - equation3.y),
+            dX2 = (x2 - equation3.x), dY2 = (y2 - equation3.y);
 
         double
             rad1 = Math.sqrt((dX1 * dX1 + dY1 * dY1)),
             rad2 = Math.sqrt((dX2 * dX2 + dY2 * dY2));
 
         double
-            dR1 = Math.abs(r - rad1),
-            dR2 = Math.abs(r - rad2);
+            dR1 = Math.abs(r3 - rad1),
+            dR2 = Math.abs(r3 - rad2);
 
-        if(dR1 < dR2) {
-            return points[0];
-        }
-
+        if(dR1 < dR2) return points[0];
         return points[1];
     }
 
@@ -291,30 +333,47 @@ public class CustomView extends View {
     }
 
     // Drawing Methods
-
-    private void drawPins(Canvas canvas, List<Device> devices, Paint paint) {
-        int len = devices.size();
+    
+    private void drawPins2(Canvas canvas, List<Point> points, Paint paint) {
+        int len = points.size();
 
         for(int i = 0; i < len; i++) {
-            Device tmp = devices.get(i);
-            drawPin(canvas, tmp.getLongitude(), tmp.getLatitude(), paint);
+            Point point = points.get(i);
+            drawPin2(canvas, point, paint);
         }
     }
 
-    private void drawPin(Canvas canvas, double longitude, double latitude, Paint paint) {
-        double cx, cy, r;
+    private void drawPin2(Canvas canvas, Point point, Paint paint) {
+        canvas.drawCircle((float) point.x, (float) point.y, 10.0f, paint);
+    }
 
-        cx = (longitude - topleftX) * scaleX;
-        cy = (topleftY - latitude) * scaleY;
-        r = 10;
+    // Distance Methods
 
-        canvas.drawCircle((float) cx, (float) cy, (float) r, paint);
+    private Point distance(Point point1, Point point2) {
+        return new Point(Math.abs(point1.x - point2.x), Math.abs(point1.y - point2.y));
+    }
+
+    private Point distanceToPixel(Point point) {
+        // Convert to meter
+        double
+            x = point.x * 110.57,
+            y = point.y * 111.32;
+        
+        // Convert to pixel
+        x = x * mapLenInPixel / mapLenInMeter * 1000;
+        y = y * mapLenInPixel / mapLenInMeter * 1000;
+        
+        return new Point(x, y);
+    }
+
+    private double squashDistance(Point point) {
+        return Math.sqrt(point.x * point.x + point.y * point.y);
     }
 
     // Public Methods
 
     public void updateMyPosition(Device device) {
-        myDevice = getTriangulatedPosition(device);
+        // myDevice = getTriangulatedPosition(device);
         postInvalidate();
     }
 
@@ -323,7 +382,7 @@ public class CustomView extends View {
 
         devicesList.clear();
         for(int i = 0; i < nLen; i++) {
-            devicesList.add(getTriangulatedPosition(devices.get(i)));
+            // devicesList.add(getTriangulatedPosition(devices.get(i)));
         }
 
         postInvalidate();

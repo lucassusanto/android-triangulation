@@ -95,8 +95,13 @@ public class CustomView extends View {
     }
 
     private void initReferences() {
+        refList = new ArrayList<Device>();
 
+        refList.add(new Device("REF1", -7.274922, 112.800401));
+        refList.add(new Device("REF2", -7.283147, 112.790550));
+        refList.add(new Device("REF3", -7.286468, 112.804709));
 
+        // Revisi
 
         // Ref Points
         refPoints = new ArrayList<Point>();
@@ -163,9 +168,9 @@ public class CustomView extends View {
         super.onDraw(canvas);
         canvas.drawBitmap(mImage, 0, 0, null);
 
-//        drawPins(canvas, refList, mPaintRef);
-//        drawPins(canvas, devicesList, mPaintDevices);
-//        drawPin(canvas, myDevice.getLongitude(), myDevice.getLatitude(), mPaintMyDevice);
+        drawPins(canvas, refList, mPaintRef);
+        drawPins(canvas, devicesList, mPaintDevices);
+        drawPin(canvas, myDevice.getLongitude(), myDevice.getLatitude(), mPaintMyDevice);
 
         // Revisi
 
@@ -273,7 +278,6 @@ public class CustomView extends View {
         return points[1];
     }
 
-    // Distance between (x1, y1) and (x2, y2) in meter
     private double distanceInMeter(double x1, double y1, double x2, double y2) {
         double R = 6378.137;
         double dLat = y2 * Math.PI / 180 - y1 * Math.PI / 180;
@@ -292,6 +296,27 @@ public class CustomView extends View {
     }
 
     // Drawing Methods
+
+    private void drawPins(Canvas canvas, List<Device> devices, Paint paint) {
+        int len = devices.size();
+
+        for(int i = 0; i < len; i++) {
+            Device tmp = devices.get(i);
+            drawPin(canvas, tmp.getLongitude(), tmp.getLatitude(), paint);
+        }
+    }
+
+    private void drawPin(Canvas canvas, double longitude, double latitude, Paint paint) {
+        double cx, cy, r;
+
+        cx = (longitude - topleftX) * scaleX;
+        cy = (topleftY - latitude) * scaleY;
+        r = 10;
+
+        canvas.drawCircle((float) cx, (float) cy, (float) r, paint);
+    }
+
+    // Revisi
     
     private void drawPins2(Canvas canvas, List<Point> points, Paint paint) {
         int len = points.size();

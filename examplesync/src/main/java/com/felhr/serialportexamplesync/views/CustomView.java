@@ -37,10 +37,9 @@ public class CustomView extends View {
     // Revisi
     private List<Point> refPoints;
     private List<Point> refPixels;
-    
-    private double mapLenInPixel, mapLenInMeter;
-
     private Point myDevice2;
+
+    private double mapLenInPixel, mapLenInMeter;
 
     // Drawing Variables
     private Bitmap mImage;
@@ -49,9 +48,6 @@ public class CustomView extends View {
     // Devices Variables
     private List<Device> refList, devicesList;
     private Device myDevice;
-
-    // Debug
-    private boolean debug = false;
 
     // Constructors
 
@@ -99,6 +95,9 @@ public class CustomView extends View {
     }
 
     private void initReferences() {
+
+
+
         // Ref Points
         refPoints = new ArrayList<Point>();
 
@@ -122,31 +121,30 @@ public class CustomView extends View {
         int width = getMeasuredWidth();
         setMeasuredDimension(width, width);
 
+        // Set scaling
+        topleftY = -7.26707;
+        topleftX = 112.78335;
+
+        bottomleftY = -7.29456;
+        toprightX = 112.81129;
+
+        scaleY = width / (topleftY - bottomleftY);
+        scaleX = width / (toprightX - topleftX);
+
+        // Set map
+        mImage = BitmapFactory.decodeResource(getResources(), R.drawable.map_its_2);
+        mImage = getResizedBitmap(mImage, width, width);
+
         // Revisi
         mapLenInPixel = width;
         mapLenInMeter = 2000.0; // Meters
 
         // Revisi
         myDevice2 = getTriangulatedPosition(new Point(112.797578, -7.279922));
-        // myDevice2.y = -myDevice2.y;
 
 //        Toast.makeText((Context) mActivity.get(),
 //                "x: " + String.valueOf(myDevice2.x) + "\ny: " + String.valueOf(myDevice2.y),
 //                Toast.LENGTH_LONG).show();
-
-        // Set scaling
-//        topleftY = -7.26707;
-//        topleftX = 112.78335;
-//
-//        bottomleftY = -7.29456;
-//        toprightX = 112.81129;
-//
-//        scaleY = width / (topleftY - bottomleftY);
-//        scaleX = width / (toprightX - topleftX);
-
-        // Set map
-        mImage = BitmapFactory.decodeResource(getResources(), R.drawable.map_its_2);
-        mImage = getResizedBitmap(mImage, width, width);
     }
 
     private Bitmap getResizedBitmap(Bitmap bitmap, int reqWidth, int reqHeight) {
@@ -163,14 +161,16 @@ public class CustomView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-         canvas.drawBitmap(mImage, 0, 0, null);
-        drawPins2(canvas, refPixels, mPaintRef);
-
-        drawPin2(canvas, myDevice2, mPaintMyDevice);
+        canvas.drawBitmap(mImage, 0, 0, null);
 
 //        drawPins(canvas, refList, mPaintRef);
 //        drawPins(canvas, devicesList, mPaintDevices);
 //        drawPin(canvas, myDevice.getLongitude(), myDevice.getLatitude(), mPaintMyDevice);
+
+        // Revisi
+
+        drawPins2(canvas, refPixels, mPaintRef);
+        drawPin2(canvas, myDevice2, mPaintMyDevice);
     }
 
     // Triangulation
@@ -187,12 +187,6 @@ public class CustomView extends View {
     // Main Calculation
     private Point getTriangulatedPosition(Point point) {
         double[] dist = getDistances(point);
-
-//        Toast.makeText((Context) mActivity.get(),
-//                "dist1: " + String.valueOf(dist[0]) +
-//                    "\ndist2: " + String.valueOf(dist[1]) +
-//                  "\ndist3: " + String.valueOf(dist[2]),
-//                Toast.LENGTH_LONG).show();
 
         Point[] points = getIntersectionPoints(
             refPixels.get(0), dist[0],
@@ -218,18 +212,6 @@ public class CustomView extends View {
             x1 = equation1.x, y1 = equation1.y,
             x2 = equation2.x, y2 = equation2.y;
 
-        double scl = 100;
-
-        // compress
-//        x1 /= scl; y1 /= scl;
-//        x2 /= scl; y2 /= scl;
-//        r1 /= scl; r2 /= scl;
-
-//        Toast.makeText((Context) mActivity.get(),
-//            "x1: " + String.valueOf(x1) + ", y1: " + String.valueOf(y1)+ ", r1: " + String.valueOf(r1)+
-//                "\nx2: " + String.valueOf(x2) + ", y2: " + String.valueOf(y2)+ ", r2: " + String.valueOf(r2),
-//            Toast.LENGTH_LONG).show();
-
         double
             a = x1 * x1 - x2 * x2 - r1 * r1 + r2 * r2 + y1 * y1 - y2 * y2,
             b = 2 * (x1 - x2),
@@ -251,15 +233,6 @@ public class CustomView extends View {
             o = f + g - e,
             p = Math.sqrt(m - 4 * d * n);
 
-
-//        Toast.makeText((Context) mActivity.get(),
-//                "m: " + String.valueOf(m) +
-//                        "\nd: " + String.valueOf(d)+
-//                        "\nn: " + String.valueOf(n)+
-//                        "\ndd: " + String.valueOf(dd),
-//                Toast.LENGTH_LONG).show();
-
-
         double
             y_1 = dd * (o + p),
             x_1 = calcX(y_1, x1, x2, y1, y2, r1, r2),
@@ -267,24 +240,10 @@ public class CustomView extends View {
             y_2 = dd * (o - p),
             x_2 = calcX(y_2, x1, x2, y1, y2, r1, r2);
 
-        // decompress
-//        x_1 *= scl; y_1 *= scl;
-//        x_2 *= scl; y_2 *= scl;
-
-//        Toast.makeText((Context) mActivity.get(),
-//                "x1: " + String.valueOf(x_1) +
-//                        "\ny1: " + String.valueOf(y_1)+
-//                        "\nx2: " + String.valueOf(x_2)+
-//                        "\ny2: " + String.valueOf(y_2),
-//                Toast.LENGTH_LONG).show();
-
-
         Point[] points = new Point[2];
 
         points[0] = new Point(x_1, y_1);
         points[1] = new Point(x_2, y_2);
-
-
 
         return points;
     }

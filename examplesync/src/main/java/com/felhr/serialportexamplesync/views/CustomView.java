@@ -84,6 +84,7 @@ public class CustomView extends View {
 
         // Set References Position
         initReferences();
+        initMapReferences();
 
         // Init Variable
         devicesList = new ArrayList<Device>();
@@ -111,7 +112,9 @@ public class CustomView extends View {
         refPoints.add(new Point(112.800401, -7.274922));    // <- Edit this
         refPoints.add(new Point(112.790550, -7.283147));    // <- Edit this
         refPoints.add(new Point(112.804709, -7.286468));    // <- Edit this
+    }
 
+    private void initMapReferences() {
         // Revisi: Ref Pixels
         refPixels = new ArrayList<Point>();
 
